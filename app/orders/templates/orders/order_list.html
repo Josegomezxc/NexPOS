@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedidos - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'orders/css/order_list.css' %}">
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Pedidos</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera de pedidos">
+    <h1><i class="fas fa-receipt"></i> Pedidos &amp; Ventas</h1>
+    <p class="lead">Historial de pedidos. Clic en cualquier tarjeta para ver detalles y gestionar.</p>
+    <div class="hero-actions">
+        <a href="{% url 'orders:pos' %}" class="btn">
+            <i class="fas fa-plus-circle"></i> Tomar pedido
+        </a>
+    </div>
+</section>
+
+{# Filtros en una sola línea #}
+<div class="card modern-card mb-4">
+    <div class="card-body py-3">
+        <form method="get" id="orderFilterForm" class="order-filter-form" role="search">
+            <div class="input-group filter-q">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                </div>
+                <input type="search" name="q" id="q-input" value="{{ q }}"
+                       class="form-control border-left-0 auto-realtime-search"
+                       placeholder="Número, cliente..." autocomplete="off">
+            </div>
+            <select name="estado" class="form-control filter-auto filter-estado" aria-label="Estado">
+                <option value="">Estado: todos</option>
+                {% for k, v in estados %}<option value="{{ k }}" {% if estado == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+            </select>
+            <div class="input-group filter-auto filter-fecha">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white text-muted border-right-0">Desde</span>
+                </div>
+                <input type="date" name="desde" value="{{ desde }}" class="form-control border-left-0" title="Desde" aria-label="Desde">
+            </div>
+
+            <div class="input-group filter-auto filter-fecha">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white text-muted border-right-0">Hasta</span>
+                </div>
+                <input type="date" name="hasta" value="{{ hasta }}" class="form-control border-left-0" title="Hasta" aria-label="Hasta">
+            </div>
+            <noscript>
+                <button class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+            </noscript>
+        </form>
+    </div>
+</div>
+
+{# Cuadrícula de Tarjetas de Pedidos #}
+<div class="order-card-grid mb-4">
+    {% for p in pedidos %}
+    <div class="order-card"
+        data-id="{{ p.id }}"
+        data-numero="{{ p.numero }}"
+        data-total="{{ p.total|stringformat:'s' }}"
+        data-vendedor="{{ p.vendedor.get_full_name|default:p.vendedor.username }}"
+        data-cliente="{{ p.cliente|default:'Consumidor Final' }}"
+        data-estado="{{ p.estado }}"
+        data-metodo-display="{{ p.get_metodo_pago_texto }}"
+        data-items-count="{{ p.items.count }}"
+        data-fecha="{{ p.creado|date:'d/m/Y H:i' }}"
+        data-detail-url="{{ p.get_absolute_url }}"
+        data-ticket-url="{% url 'orders:order_ticket' p.pk %}"
+        tabindex="0" role="button" aria-label="Ver detalles de {{ p.numero }}">
+        
+        <div class="order-card-header">
+            <span class="order-card-number">
+                <i class="fas fa-receipt text-warning mr-1"></i> {{ p.numero }}
+            </span>
+            {% if p.estado == 'completado' %}
+                <span class="badge badge-success">Completado</span>
+            {% elif p.estado == 'pendiente' %}
+                <span class="badge badge-warning">Pendiente</span>
+            {% else %}
+                <span class="badge badge-secondary">Cancelado</span>
+            {% endif %}
+        </div>
+
+        <div class="order-card-body">
+            <div class="order-card-total">${{ p.total|floatformat:2 }}</div>
+            
+            <div class="order-card-meta">
+                <i class="fas fa-user text-muted"></i>
+                <span>Vendedor: {{ p.vendedor.get_full_name|default:p.vendedor.username }}</span>
+            </div>
+            <div class="order-card-meta">
+                <i class="fas fa-user-tag text-muted"></i>
+                <span>Cliente: {{ p.cliente|default:"Consumidor Final" }}</span>
+            </div>
+            <div class="order-card-meta">
+                <i class="fas fa-box text-muted"></i>
+                <span>{{ p.items.count }} producto{% if p.items.count != 1 %}s{% endif %}</span>
+            </div>
+            <div class="order-card-meta">
+                <i class="fas fa-clock text-muted"></i>
+                <span>{{ p.creado|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+
+        <div class="order-card-footer justify-content-center">
+            <a href="{{ p.get_absolute_url }}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                <i class="fas fa-eye"></i> Detalle
+            </a>
+            <a href="{% url 'orders:order_ticket' p.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Imprimir ticket">
+                <i class="fas fa-print"></i> Ticket
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm">
+        <i class="fas fa-receipt fa-3x d-block mb-3 text-muted"></i>
+        <h5>No hay pedidos en este rango</h5>
+        <p class="text-muted">Intentá cambiar los filtros o registra un nuevo pedido desde el POS.</p>
+        <a href="{% url 'orders:pos' %}" class="btn btn-primary mt-2">
+            <i class="fas fa-plus-circle"></i> Ir al POS
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{# Modal de detalle del pedido #}
+<div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold" id="orderModalLabel">
+                    <i class="fas fa-receipt"></i> Resumen del pedido
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="h3 font-weight-bold text-dark mb-1" id="order-modal-numero"></div>
+                <div class="mb-3">
+                    <span id="order-modal-estado" class="mr-2"></span>
+                    <span class="badge badge-info badge-pill" id="order-modal-items-count"></span>
+                </div>
+
+                <div class="bg-light rounded p-3 text-left mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted font-weight-bold text-uppercase">Total a cobrar</span>
+                        <span class="h4 mb-0 text-warning font-weight-bold" id="order-modal-total"></span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted text-uppercase">Vendedor</span>
+                        <span class="font-weight-600 text-dark" id="order-modal-vendedor"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted text-uppercase">Cliente</span>
+                        <span class="font-weight-600 text-dark" id="order-modal-cliente"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted text-uppercase">Método de pago</span>
+                        <span class="font-weight-600 text-dark" id="order-modal-metodo"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted text-uppercase">Fecha</span>
+                        <span class="font-weight-600 text-dark" id="order-modal-fecha"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="#" id="order-modal-btn-ver" class="btn btn-primary">
+                    <i class="fas fa-eye"></i> Ver detalle completo
+                </a>
+                <a href="#" id="order-modal-btn-ticket" class="btn btn-outline-secondary" target="_blank">
+                    <i class="fas fa-print"></i> Imprimir ticket
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'orders/js/order_list.js' %}"></script>
+{% endblock %}

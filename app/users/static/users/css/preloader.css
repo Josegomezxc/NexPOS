@@ -1,0 +1,147 @@
+/* ============================================================
+   preloader.css — Pantalla de Carga Global (NexPOS)
+============================================================ */
+
+#nexpos-preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: all;
+}
+
+#nexpos-preloader.preloader-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+/* Spinner exterior giratorio con brillo */
+.preloader-spinner-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.preloader-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(37, 99, 235, 0.15);
+  border-top-color: #2563eb;
+  border-right-color: #38bdf8;
+  animation: nexpos-spin 0.9s linear infinite;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+}
+
+.preloader-ring-outer {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  border: 2px dashed rgba(245, 158, 11, 0.35);
+  animation: nexpos-spin-reverse 3s linear infinite;
+}
+
+/* Ícono central */
+.preloader-icon-box {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.8rem;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  animation: nexpos-pulse 1.8s ease-in-out infinite;
+}
+
+/* Título de Marca */
+.preloader-title {
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.preloader-title span {
+  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.preloader-text {
+  font-size: 0.88rem;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* Barra de progreso inferior */
+.preloader-bar-container {
+  width: 140px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin-top: 1.25rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.preloader-bar {
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #38bdf8, #f59e0b);
+  border-radius: 10px;
+  animation: nexpos-progress 1.4s ease-in-out infinite;
+}
+
+@keyframes nexpos-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes nexpos-spin-reverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes nexpos-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes nexpos-progress {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(50%); }
+  100% { transform: translateX(250%); }
+}

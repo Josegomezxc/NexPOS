@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedido {{ pedido.numero }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">Pedidos</a></li>
+<li class="breadcrumb-item active">{{ pedido.numero }}</li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'orders/css/order_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera del pedido">
+    <h1><i class="fas fa-receipt"></i> Pedido {{ pedido.numero }}</h1>
+    <p class="lead">Creado el {{ pedido.creado|date:"l j \d\e F \d\e Y · H:i" }} hrs por {{ pedido.vendedor.get_full_name|default:pedido.vendedor.username }}</p>
+    <div class="hero-actions">
+        <a href="{% url 'orders:order_ticket' pedido.pk %}" target="_blank" rel="noopener" class="btn">
+            <i class="fas fa-print"></i> Ver / Imprimir ticket
+        </a>
+        {% if pedido.estado == 'pendiente' %}
+        <a href="{% url 'orders:order_update' pedido.pk %}" class="btn btn-ghost">
+            <i class="fas fa-pencil-alt"></i> Editar
+        </a>
+        <a href="{% url 'caja:caja_detalle' pedido.pk %}" class="btn btn-success">
+            <i class="fas fa-cash-register"></i> Cobrar en Caja
+        </a>
+        {% endif %}
+        <a href="{% url 'orders:order_list' %}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Volver a Pedidos
+        </a>
+    </div>
+</section>
+
+<div class="row">
+    {# Detalle de Productos del Pedido #}
+    <div class="col-12 col-lg-8 mb-4">
+        <div class="card modern-card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-boxes text-primary mr-1"></i> Desglose de Productos
+                </h2>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table modern-table mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center" style="width: 100px;">Cant.</th>
+                                <th class="text-right" style="width: 120px;">Precio Unit.</th>
+                                <th class="text-right" style="width: 140px;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pedido.items.all %}
+                            <tr>
+                                <td class="align-middle">
+                                    <strong class="d-block text-dark">{{ item.producto.nombre }}</strong>
+                                    {% if item.nota %}
+                                        <small class="d-block text-muted mt-1"><i class="fas fa-sticky-note"></i> {{ item.nota }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center align-middle font-weight-bold text-secondary">{{ item.cantidad|floatformat:0 }}</td>
+                                <td class="text-right align-middle text-muted">${{ item.precio_unitario|floatformat:2 }}</td>
+                                <td class="text-right align-middle font-weight-bold text-dark">${{ item.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+                                <td colspan="3" class="text-right text-muted font-weight-bold">Subtotal</td>
+                                <td class="text-right font-weight-bold text-dark">${{ pedido.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% if pedido.descuento %}
+                            <tr>
+                                <td colspan="3" class="text-right text-muted font-weight-bold">Descuento aplicado</td>
+                                <td class="text-right font-weight-bold text-danger">-${{ pedido.descuento|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr class="order-detail-total bg-white">
+                                <td colspan="3" class="text-right h5 font-weight-bold text-uppercase text-dark mb-0">Total a Pagar</td>
+                                <td class="text-right h4 font-weight-bold text-warning mb-0">${{ pedido.total|floatformat:2 }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Resumen de Información e Historia #}
+    <div class="col-12 col-lg-4 mb-4">
+        <div class="card modern-card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-info-circle text-primary mr-1"></i> Estado del Pedido
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-uppercase text-muted font-weight-bold d-block mb-1">Estado de Pago</small>
+                    {% if pedido.estado == 'completado' %}
+                        <span class="badge badge-success px-3 py-2 font-size-sm"><i class="fas fa-check-circle"></i> Completado / Cobrado</span>
+                    {% elif pedido.estado == 'pendiente' %}
+                        <span class="badge badge-warning px-3 py-2 font-size-sm"><i class="fas fa-clock"></i> Pendiente de cobro en caja</span>
+                    {% else %}
+                        <span class="badge badge-secondary px-3 py-2 font-size-sm"><i class="fas fa-times-circle"></i> Cancelado</span>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <small class="text-uppercase text-muted font-weight-bold d-block">Vendedor Atendiendo</small>
+                    <span class="font-weight-bold text-dark">{{ pedido.vendedor.get_full_name|default:pedido.vendedor.username }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-uppercase text-muted font-weight-bold d-block">Cliente Registrado</small>
+                    <span class="font-weight-bold text-dark">{{ pedido.cliente|default:"Consumidor Final" }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-uppercase text-muted font-weight-bold d-block">Método de Pago</small>
+                    <span class="font-weight-bold text-dark">{{ pedido.get_metodo_pago_texto }}</span>
+                </div>
+
+                {% if pedido.notas %}
+                <div class="mb-3">
+                    <small class="text-uppercase text-muted font-weight-bold d-block">Notas del Pedido</small>
+                    <div class="p-2 bg-light rounded text-muted small mt-1">
+                        <i class="fas fa-sticky-note mr-1"></i> {{ pedido.notas }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if pedido.estado == 'pendiente' %}
+            <div class="card-footer bg-white border-top-0 pt-0 pb-3 px-3">
+                <a href="{% url 'caja:caja_detalle' pedido.pk %}" class="btn btn-success btn-block font-weight-bold mb-2">
+                    <i class="fas fa-cash-register mr-1"></i> Cobrar este pedido en Caja
+                </a>
+                <form method="post" action="{% url 'orders:order_cancelar' pedido.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-block btn-confirm"
+                        data-confirm-titulo="¿Cancelar pedido?"
+                        data-confirm="¿Cancelar el pedido {{ pedido.numero }}? Ya no se podrá cobrar."
+                        data-confirm-boton="Cancelar pedido"
+                        data-confirm-clase="btn-danger"
+                        data-confirm-icono="fas fa-times">
+                        <i class="fas fa-times"></i> Cancelar Pedido
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

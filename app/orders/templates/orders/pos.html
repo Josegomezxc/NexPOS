@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Punto de venta - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Punto de venta</li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'orders/css/pos.css' %}">
+{% endblock %}
+
+{% block content %}
+{# Configuración del POS (URLs + CSRF) leída por pos.js vía data-* #}
+<div id="pos-config"
+     data-csrf="{{ csrf_token }}"
+     data-create-url="{% url 'orders:pos_crear' %}"></div>
+
+{# Hero header con stats vivos #}
+<section class="pos-hero" aria-label="Cabecera del punto de venta">
+    <h1><i class="fas fa-cash-register"></i> Punto de Venta (POS)</h1>
+    <p>Tocá o seleccioná un producto para agregarlo al pedido en tiempo real.</p>
+    <div class="hero-stats">
+        <div class="stat">
+            <div class="stat-label">Productos en el menú</div>
+            <div class="stat-value">{{ productos|length }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Categorías activas</div>
+            <div class="stat-value">{{ categorias|length }}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Atendido por</div>
+            <div class="stat-value">{{ user.get_full_name|default:user.username }}</div>
+        </div>
+    </div>
+</section>
+
+<div class="row">
+    {# Columna Izquierda: Catálogo Visual Táctil de Productos (col-lg-7) #}
+    <div class="col-12 col-lg-7 mb-4">
+        
+        {# Buscador de productos en tiempo real #}
+        <div class="card modern-card mb-3">
+            <div class="card-body p-2">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                    </div>
+                    <input type="search" id="pos-search-input" class="form-control border-left-0"
+                           placeholder="Buscar producto por nombre..." autocomplete="off">
+                </div>
+            </div>
+        </div>
+
+        {# Píldoras de Categorías #}
+        <div class="pos-cat-pills-container">
+            <div class="pos-cat-pills" id="pos-cat-pills">
+                <button type="button" class="pos-cat-pill active" data-cat-id="all">
+                    <i class="fas fa-th-large"></i> Todas
+                </button>
+                {% for c in categorias %}
+                <button type="button" class="pos-cat-pill" data-cat-id="{{ c.id }}" data-color="{{ c.color }}">
+                    <i class="{{ c.icono|default:'fas fa-tag' }}"></i> {{ c.nombre }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Cuadrícula Táctil de Productos #}
+        <div class="pos-product-touch-grid" id="pos-touch-grid">
+            {% for p in productos %}
+            <div class="pos-touch-card"
+                 data-id="{{ p.id }}"
+                 data-nombre="{{ p.nombre }}"
+                 data-precio="{{ p.precio|stringformat:'s' }}"
+                 data-categoria-id="{{ p.categoria_id }}"
+                 data-categoria-nombre="{{ p.categoria.nombre }}"
+                 data-categoria-color="{{ p.categoria.color }}"
+                 data-descripcion="{{ p.descripcion|default:'' }}"
+                 data-imagen="{% if p.imagen %}{{ p.imagen.url }}{% endif %}"
+                 role="button" tabindex="0">
+                 
+                 <div class="pos-touch-card-img-wrap">
+                     {% if p.imagen %}
+                         <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="pos-touch-card-img">
+                     {% else %}
+                         <div class="pos-touch-card-placeholder" style="background: linear-gradient(135deg, {{ p.categoria.color }} 0%, #1e293b 120%);">
+                             <i class="{{ p.categoria.icono|default:'fas fa-utensils' }}"></i>
+                         </div>
+                     {% endif %}
+
+                     <span class="pos-touch-card-price">${{ p.precio|floatformat:2 }}</span>
+                 </div>
+
+                 <div class="pos-touch-card-body">
+                     <span class="badge pos-touch-card-cat" style="background-color: {{ p.categoria.color }}; color: #fff;">
+                         {{ p.categoria.nombre }}
+                     </span>
+                     <h4 class="pos-touch-card-title">{{ p.nombre }}</h4>
+                     <p class="pos-touch-card-desc">{{ p.descripcion|default:"Sin descripción." }}</p>
+                     
+                     <button type="button" class="btn btn-sm btn-outline-primary pos-touch-card-add-btn">
+                         <i class="fas fa-plus"></i> Agregar
+                     </button>
+                 </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm">
+                <i class="fas fa-box-open fa-3x d-block mb-3 text-muted"></i>
+                <h5>No hay productos activos</h5>
+                <p class="text-muted">Creá productos desde el menú de productos para venderlos aquí.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Columna Derecha: Panel del Pedido / Carrito (col-lg-5) #}
+    <div class="col-12 col-lg-5">
+        <div class="card pos-cart-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-white">
+                    <i class="fas fa-shopping-cart mr-1"></i> Pedido actual
+                    <span class="badge badge-light text-dark ml-1" id="pos-cart-count">0</span>
+                </h6>
+                <button type="button" class="btn btn-sm btn-light" id="pos-btn-vaciar" title="Vaciar pedido">
+                    <i class="fas fa-trash text-danger"></i> <span class="d-none d-sm-inline">Vaciar</span>
+                </button>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                    <table class="table mb-0" id="pos-cart-table">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center" style="width: 110px;">Cant.</th>
+                                <th class="text-right" style="width: 100px;">Total</th>
+                                <th style="width: 40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="pos-cart-tbody">
+                            <tr id="pos-cart-empty">
+                                <td colspan="4" class="text-center text-muted py-5">
+                                    <i class="fas fa-shopping-basket fa-3x d-block mb-2 text-muted"></i>
+                                    Aún no hay productos en el pedido.<br>
+                                    <small>Tocá cualquier producto de la izquierda para agregarlo.</small>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <span class="h6 mb-0 font-weight-bold text-uppercase text-muted">Total a cobrar</span>
+                    <span class="h3 mb-0 font-weight-bold text-primary" id="pos-total">$0.00</span>
+                </div>
+
+                <button id="pos-btn-guardar" type="button" class="btn btn-success btn-lg btn-block font-weight-bold shadow-sm" disabled>
+                    <i class="fas fa-save"></i> Guardar pedido
+                </button>
+                <button id="pos-btn-imprimir" type="button" class="btn btn-primary btn-lg btn-block font-weight-bold d-none shadow-sm">
+                    <i class="fas fa-print"></i> Imprimir ticket
+                </button>
+                <button id="pos-btn-nuevo" type="button" class="btn btn-outline-secondary btn-block mt-2 d-none">
+                    <i class="fas fa-plus-circle"></i> Nuevo pedido
+                </button>
+                <small id="pos-help-text" class="form-text text-center text-muted mt-2 mb-0">
+                    El botón se activa cuando agregás al menos un producto al pedido.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Datos de productos serializados para JS #}
+{{ productos_json|json_script:"pos-productos-data" }}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'orders/js/pos.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,159 @@
+/* ============================================================
+   Estilos del listado de empleados (Card Grid & Filtros)
+============================================================ */
+
+@import url('_variables.css');
+
+.empleado-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.empleado-filter-form .filter-q {
+  flex: 1 1 100%;
+}
+
+.empleado-filter-form .filter-rol,
+.empleado-filter-form .filter-estado {
+  flex: 1 1 140px;
+}
+
+@media (min-width: 768px) {
+  .empleado-filter-form .filter-q {
+    flex: 1 1 220px;
+    max-width: 380px;
+    min-width: 220px;
+  }
+  .empleado-filter-form .filter-rol {
+    margin-left: auto;
+    flex-grow: 0;
+    min-width: 170px;
+  }
+  .empleado-filter-form .filter-estado {
+    flex-grow: 0;
+    min-width: 160px;
+  }
+}
+
+/* Card Grid de empleados */
+.empleado-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.empleado-card {
+  border: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.empleado-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+.empleado-card-header {
+  position: relative;
+  padding: 1.5rem 1rem 1rem 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.empleado-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.empleado-card:hover .empleado-avatar {
+  transform: scale(1.08);
+}
+
+.empleado-avatar.avatar-admin {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.empleado-avatar.avatar-empleado {
+  background: linear-gradient(135deg, #64748b 0%, #334155 100%);
+}
+
+.empleado-status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 0.75rem;
+  padding: 0.35em 0.75em;
+  border-radius: 50rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.empleado-card-body {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.empleado-card-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.empleado-card-username {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.empleado-role-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35em 0.8em;
+  border-radius: 50rem;
+  margin-bottom: 1rem;
+}
+
+.empleado-info-item {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  word-break: break-all;
+}
+
+.empleado-card-footer {
+  padding: 0.85rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}

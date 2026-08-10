@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Categorías{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'products/css/category_list.css' %}">
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'products:product_list' %}">Menú</a></li>
+<li class="breadcrumb-item active">Categorías</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera de categorías">
+    <h1><i class="fas fa-tags"></i> Categorías del menú</h1>
+    <p class="lead">Agrupan los productos del POS. Clic en cualquier tarjeta para ver detalles y gestionar.</p>
+    <div class="hero-actions">
+        <a href="{% url 'products:category_create' %}" class="btn">
+            <i class="fas fa-plus-circle"></i> Nueva categoría
+        </a>
+        <a href="{% url 'products:product_list' %}" class="btn btn-ghost">
+            <i class="fas fa-utensils"></i> Ver productos
+        </a>
+    </div>
+</section>
+
+<div class="cat-card-grid mb-4">
+    {% for c in categorias %}
+    <div class="category-card"
+        data-id="{{ c.id }}"
+        data-nombre="{{ c.nombre }}"
+        data-descripcion="{{ c.descripcion|default:'' }}"
+        data-color="{{ c.color }}"
+        data-icono="{{ c.icono|default:'fas fa-tag' }}"
+        data-activa="{{ c.activa|yesno:'1,0' }}"
+        data-count="{{ c.productos.count }}"
+        data-imagen="{% if c.imagen %}{{ c.imagen.url }}{% endif %}"
+        data-edit-url="{% url 'products:category_update' c.pk %}"
+        data-delete-url="{% url 'products:category_delete' c.pk %}"
+        data-activate-url="{% url 'products:category_activate' c.pk %}"
+        tabindex="0" role="button" aria-label="Ver detalles de {{ c.nombre }}">
+        
+        <div class="category-card-header">
+            {% if c.imagen %}
+                <img src="{{ c.imagen.url }}" alt="{{ c.nombre }}" class="category-card-img">
+            {% else %}
+                <div class="category-card-banner" style="background: linear-gradient(135deg, {{ c.color }} 0%, #1e293b 120%);">
+                    <i class="{{ c.icono|default:'fas fa-tag' }} banner-icon"></i>
+                </div>
+            {% endif %}
+
+            {% if c.activa %}
+                <span class="badge badge-success category-badge-status">Activa</span>
+            {% else %}
+                <span class="badge badge-secondary category-badge-status">Inactiva</span>
+            {% endif %}
+
+            <span class="category-badge-count">
+                <i class="fas fa-box-open mr-1"></i>{{ c.productos.count }} productos
+            </span>
+        </div>
+
+        <div class="category-card-body">
+            <h3 class="category-card-title">{{ c.nombre }}</h3>
+            <p class="category-card-desc">
+                {{ c.descripcion|default:"Sin descripción adicional." }}
+            </p>
+        </div>
+
+        <div class="category-card-footer justify-content-center">
+            <a href="{% url 'products:category_update' c.pk %}" class="btn btn-sm btn-outline-primary mr-2" title="Editar">
+                <i class="fas fa-pencil-alt"></i> Editar
+            </a>
+            {% if c.activa %}
+            <a href="{% url 'products:category_delete' c.pk %}" class="btn btn-sm btn-danger btn-confirm"
+                title="Desactivar"
+                data-confirm-titulo="¿Desactivar categoría?"
+                data-confirm="¿Desactivar la categoría {{ c.nombre }}? No aparecerá en el menú y sus productos se desactivan."
+                data-confirm-boton="Sí, desactivar"
+                data-confirm-clase="btn-danger"
+                data-confirm-icono="fas fa-toggle-off"
+                data-confirm-url="{% url 'products:category_delete' c.pk %}">
+                <i class="fas fa-toggle-off"></i> Desactivar
+            </a>
+            {% else %}
+            <form method="post" action="{% url 'products:category_activate' c.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar">
+                    <i class="fas fa-toggle-on"></i> Reactivar
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm">
+        <i class="fas fa-tags fa-3x d-block mb-3 text-muted"></i>
+        <h5>Sin categorías registradas</h5>
+        <p class="text-muted">Creá la primera categoría para organizar tu menú.</p>
+        <a href="{% url 'products:category_create' %}" class="btn btn-primary mt-2">
+            <i class="fas fa-plus-circle"></i> Crear categoría
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{# Modal de detalle de la categoría #}
+<div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold" id="categoryModalLabel">
+                    <i class="fas fa-tag"></i> Detalle de la categoría
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3" id="cat-modal-image-wrap"></div>
+                <h4 class="mb-1 text-center font-weight-bold" id="cat-modal-nombre"></h4>
+                <div class="text-center mb-3">
+                    <span id="cat-modal-estado" class="mr-2"></span>
+                    <span class="badge badge-info badge-pill" id="cat-modal-count"></span>
+                </div>
+                <p class="text-muted mb-3 text-center" id="cat-modal-descripcion"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="#" id="cat-modal-btn-editar" class="btn btn-primary">
+                    <i class="fas fa-pencil-alt"></i> Editar
+                </a>
+                <a href="#" id="cat-modal-btn-desactivar" class="btn btn-danger btn-confirm">
+                    <i class="fas fa-toggle-off"></i> Desactivar
+                </a>
+                <form method="post" action="" id="cat-modal-form-activar" class="m-0 d-none">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-toggle-on"></i> Reactivar
+                    </button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'products/js/category_list.js' %}"></script>
+{% endblock %}

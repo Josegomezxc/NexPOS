@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Caja - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'caja/css/caja.css' %}">
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Caja</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera de caja">
+    <h1><i class="fas fa-coins"></i> Caja</h1>
+    <p class="lead">Listado de pedidos para cobro directo. Clic en cualquier tarjeta para ver detalles y gestionar.</p>
+    <div class="hero-actions">
+        <a href="{% url 'orders:pos' %}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Volver al POS
+        </a>
+    </div>
+</section>
+
+<div class="card modern-card mb-4">
+    <div class="card-body py-3">
+        <form method="get" role="search" class="caja-filter-form" id="cajaFilterForm">
+            {# Campo oculto para preservar el estado al buscar #}
+            <input type="hidden" name="estado" value="{{ estado|default:'' }}" id="cajaEstadoHidden">
+            <div class="d-flex flex-wrap align-items-center gap-2" style="gap:.75rem">
+                <div class="input-group flex-grow-1" style="min-width:220px">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                    </div>
+                    <input type="search" name="q" value="{{ q|default:'' }}" class="form-control border-left-0 auto-realtime-search"
+                           placeholder="Buscar por número de ticket, cliente..."
+                           aria-label="Buscar ticket" autocomplete="off" autofocus>
+                </div>
+                <div class="btn-group ml-2 caja-estado-btns" role="group" aria-label="Filtrar por estado">
+                    <a href="?q={{ q|urlencode }}&estado=" 
+                       class="btn btn-sm {% if not estado %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+                        Todos
+                    </a>
+                    <a href="?q={{ q|urlencode }}&estado=pendiente"
+                       class="btn btn-sm {% if estado == 'pendiente' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                        <i class="fas fa-hourglass-half mr-1"></i>Pendientes
+                        <span class="badge badge-light ml-1">{{ n_pendientes }}</span>
+                    </a>
+                    <a href="?q={{ q|urlencode }}&estado=completado"
+                       class="btn btn-sm {% if estado == 'completado' %}btn-success{% else %}btn-outline-success{% endif %}">
+                        <i class="fas fa-check-circle mr-1"></i>Cobrados
+                        <span class="badge badge-light ml-1">{{ n_cobrados }}</span>
+                    </a>
+                    <a href="?q={{ q|urlencode }}&estado=cancelado"
+                       class="btn btn-sm {% if estado == 'cancelado' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                        <i class="fas fa-times-circle mr-1"></i>Cancelados
+                        <span class="badge badge-light ml-1">{{ n_cancelados }}</span>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 m-0 font-weight-bold">
+        <i class="fas fa-list text-primary"></i> Pedidos en Caja
+        {% if estado == 'pendiente' %}<span class="badge badge-warning ml-2">Pendientes</span>
+        {% elif estado == 'completado' %}<span class="badge badge-success ml-2">Cobrados</span>
+        {% elif estado == 'cancelado' %}<span class="badge badge-danger ml-2">Cancelados</span>
+        {% endif %}
+    </h2>
+    <div>
+        <span class="badge badge-warning font-weight-normal px-2 py-1">{{ n_pendientes }} pendientes</span>
+        <span class="badge badge-success font-weight-normal px-2 py-1 ml-1">{{ n_cobrados }} cobrados</span>
+        <span class="badge badge-secondary font-weight-normal px-2 py-1 ml-1">{{ n_cancelados }} cancelados</span>
+    </div>
+</div>
+
+{# Cuadrícula de Tarjetas de Caja #}
+<div class="caja-card-grid mb-4">
+    {% for p in pedidos %}
+    <div class="caja-card"
+        data-id="{{ p.id }}"
+        data-numero="{{ p.numero }}"
+        data-total="{{ p.total|stringformat:'s' }}"
+        data-vendedor="{{ p.vendedor.get_full_name|default:p.vendedor.username }}"
+        data-estado="{{ p.estado }}"
+        data-metodo-display="{{ p.get_metodo_pago_texto }}"
+        data-items-count="{{ p.items.count }}"
+        data-fecha="{{ p.creado|date:'d/m/Y H:i' }}"
+        data-detalle-url="{% url 'caja:caja_detalle' p.pk %}"
+        data-ticket-url="{% url 'caja:caja_ticket' p.pk %}"
+        tabindex="0" role="button" aria-label="Ver detalles de {{ p.numero }}">
+        
+        <div class="caja-card-header">
+            <span class="caja-card-number">
+                <i class="fas fa-ticket-alt text-warning mr-1"></i> {{ p.numero }}
+            </span>
+            {% if p.estado == 'pendiente' %}
+                <span class="badge badge-warning">Pendiente</span>
+            {% elif p.estado == 'completado' %}
+                <span class="badge badge-success">Cobrado</span>
+            {% else %}
+                <span class="badge badge-danger">Cancelado</span>
+            {% endif %}
+        </div>
+
+        <div class="caja-card-body">
+            <div class="caja-card-total">${{ p.total|floatformat:2 }}</div>
+
+            <div class="caja-card-meta">
+                <i class="fas fa-user text-muted"></i>
+                <span>Vendedor: {{ p.vendedor.get_full_name|default:p.vendedor.username }}</span>
+            </div>
+            <div class="caja-card-meta">
+                <i class="fas fa-box text-muted"></i>
+                <span>{{ p.items.count }} producto{% if p.items.count != 1 %}s{% endif %}</span>
+            </div>
+            <div class="caja-card-meta">
+                <i class="fas fa-clock text-muted"></i>
+                <span>{{ p.creado|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+
+        <div class="caja-card-footer justify-content-center">
+            {% if p.estado == 'pendiente' %}
+                <a href="{% url 'caja:caja_detalle' p.pk %}" class="btn btn-sm btn-success px-3">
+                    <i class="fas fa-cash-register"></i> Cobrar
+                </a>
+            {% elif p.estado == 'completado' %}
+                <a href="{% url 'caja:caja_ticket' p.pk %}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary px-3">
+                    <i class="fas fa-print"></i> Ticket
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm">
+        <i class="fas fa-receipt fa-3x d-block mb-3 text-muted"></i>
+        <h5>No hay pedidos en este rango</h5>
+        <p class="text-muted">{% if q %}No hay ningún pedido que coincida con "<strong>{{ q }}</strong>".{% else %}Intentá cambiar los filtros o registra un nuevo pedido desde el POS.{% endif %}</p>
+        <a href="{% url 'orders:pos' %}" class="btn btn-primary mt-2">
+            <i class="fas fa-plus-circle"></i> Ir al POS
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{# Modal de detalle de pedido en Caja #}
+<div class="modal fade" id="cajaIndexModal" tabindex="-1" role="dialog" aria-labelledby="cajaIndexModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold" id="cajaIndexModalLabel">
+                    <i class="fas fa-receipt"></i> Detalle del pedido
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="h3 font-weight-bold text-dark mb-1" id="caja-modal-numero"></div>
+                <div class="mb-3">
+                    <span id="caja-modal-estado" class="mr-2"></span>
+                    <span class="badge badge-info badge-pill" id="caja-modal-items-count"></span>
+                </div>
+
+                <div class="bg-light rounded p-3 text-left mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted font-weight-bold text-uppercase">Total del pedido</span>
+                        <span class="h4 mb-0 text-warning font-weight-bold" id="caja-modal-total"></span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted text-uppercase">Vendedor</span>
+                        <span class="font-weight-600 text-dark" id="caja-modal-vendedor"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted text-uppercase">Método / Estado pago</span>
+                        <span class="font-weight-600 text-dark" id="caja-modal-metodo"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted text-uppercase">Fecha y Hora</span>
+                        <span class="font-weight-600 text-dark" id="caja-modal-fecha"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="#" id="caja-modal-btn-cobrar" class="btn btn-success px-4">
+                    <i class="fas fa-cash-register"></i> Ir a cobrar
+                </a>
+                <a href="#" id="caja-modal-btn-ticket" class="btn btn-outline-secondary" target="_blank">
+                    <i class="fas fa-print"></i> Reimprimir ticket
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'caja/js/caja_index.js' %}"></script>
+{% endblock %}

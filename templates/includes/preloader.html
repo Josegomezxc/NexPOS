@@ -1,0 +1,21 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'users/css/preloader.css' %}">
+
+<div id="nexpos-preloader" aria-label="Cargando sistema NexPOS" role="status">
+    <div class="preloader-content">
+        <div class="preloader-spinner-wrapper">
+            <div class="preloader-ring-outer"></div>
+            <div class="preloader-ring"></div>
+            <div class="preloader-icon-box" style="overflow:hidden; padding:2px;">
+                <img src="{% static 'users/img/nexpos_logo.png' %}" alt="NexPOS Logo" style="width:100%; height:100%; object-fit:cover; border-radius:14px;">
+            </div>
+        </div>
+        <h2 class="preloader-title">Nex<span>POS</span></h2>
+        <p class="preloader-text">Cargando sistema...</p>
+        <div class="preloader-bar-container">
+            <div class="preloader-bar"></div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'users/js/preloader.js' %}"></script>

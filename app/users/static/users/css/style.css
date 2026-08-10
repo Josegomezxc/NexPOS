@@ -1,0 +1,1504 @@
+/* ============================================================
+   style.css — hoja principal del proyecto Doña Sara
+   Estructura mobile-first: estilos base aplican a mobile, los
+   breakpoints (@media min-width) progresivamente agregan reglas
+   para tablet y desktop.
+
+   Orden:
+     1. Variables (importadas)
+     2. Reset / accesibilidad / base
+     3. Componentes globales (filtros, sidebar, login, etc.)
+     4. Overrides Bootstrap (paleta de marca)
+     5. Componentes específicos del POS
+     6. Utilidades responsive (mobile → tablet → desktop)
+     7. Media queries `min-width` (tablet, desktop)
+============================================================ */
+
+@import url('_variables.css');
+
+
+/* ============================================================
+   1. Base / accesibilidad
+============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Mobile-first: cero overflow horizontal */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mejor outline para navegación por teclado (no se ve en mouse) */
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Quitamos outline del default que sale en cualquier focus (mouse) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip link: oculto hasta que recibe focus por teclado */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--brand);
+  color: var(--color-white);
+  padding: var(--space-sm) var(--space-md);
+  z-index: 9999;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius-md) 0;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+
+/* ============================================================
+   2. Barra de filtros (heredada, mobile-first)
+   Mobile: stack vertical.
+   Tablet+ (>=768px): row horizontal con buscador a la izquierda.
+============================================================ */
+
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.filter-bar .filter-search {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.filter-bar .filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.filter-bar .filter-controls > * {
+  flex: 1 1 auto;
+  min-width: 130px;
+}
+
+.filter-bar .filter-controls > button,
+.filter-bar .filter-controls > .btn {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+
+/* ============================================================
+   3. Login (mobile-first)
+============================================================ */
+
+.login-icon-stack {
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.login-icon-stack i {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+
+/* ============================================================
+   3b. Wrapper / aside / contenido — sin huecos blancos
+   El <aside> wrapper introdujo un nodo extra entre #wrapper y
+   el <ul> de la sidebar, rompiendo el stretch del flex.
+   `display: contents` saca el <aside> del layout (semántica
+   se conserva) y el <ul> vuelve a estirarse a la altura total.
+============================================================ */
+
+#wrapper > aside[aria-label="Menú lateral"] {
+  display: contents;
+}
+
+/* Body de fondo igual al wrapper para que no aparezca blanco
+   por debajo si la sidebar termina antes que el contenido. */
+body {
+  background-color: var(--color-bg, #f8f9fc);
+}
+
+
+/* ============================================================
+   4. Sidebar — comportamiento responsive estricto por viewport
+   - Mobile (< 768px): off-screen, slide-in al togglear, overlay
+   - Desktop (>= 768px): visible normal (14rem) o colapsado (5.5rem)
+   Reglas envueltas en su @media para evitar guerras de specificity.
+============================================================ */
+
+.bg-gradient-primary {
+  background-color: var(--brand-deep) !important;
+  background-image: linear-gradient(180deg, var(--brand-deep) 10%, #0F1E5C 100%) !important;
+}
+
+/* ---------- Common a todos los viewports ---------- */
+.sidebar .nav-link span,
+.sidebar .sidebar-brand-text,
+.sidebar .sidebar-heading {
+  transition: opacity var(--transition-base), visibility var(--transition-base);
+}
+
+/* Backdrop (sólo visible en mobile, ver @media abajo) */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1040;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.show {
+  display: block;
+  opacity: 1;
+}
+
+/* Botón ✕ del sidebar — fila propia arriba para no chocar con el brand */
+.sidebar-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.75rem 0.75rem 0 auto;  /* alineado a la derecha de su propia fila */
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.sidebar-close-btn:hover,
+.sidebar-close-btn:focus {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  outline: none;
+  transform: scale(1.08);
+}
+
+.sidebar-close-btn:active { transform: scale(0.96); }
+
+
+/* ============================================================
+   MOBILE  (<= 767.98px)
+   - Sidebar fixed, off-screen por default
+   - .toggled = visible (slide-in)
+   - Botón ✕ y backdrop visibles
+   - Nav-links a ancho completo, texto visible
+============================================================ */
+
+@media (max-width: 991.98px) {
+
+  #accordionSidebar.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width, 14rem) !important;
+    height: 100vh;
+    z-index: 1050;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  #accordionSidebar.sidebar.toggled {
+    transform: translateX(0);
+    width: var(--sidebar-width, 14rem) !important;
+  }
+
+  #content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Forzar nav-links a ancho completo del sidebar (override SB Admin 2's 6.5rem) */
+  #accordionSidebar.sidebar .nav-item .nav-link {
+    width: 100% !important;
+    text-align: left !important;
+    padding: 0.85rem 1.2rem !important;
+    white-space: normal;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  #accordionSidebar.sidebar .nav-item .nav-link i {
+    font-size: 0.95rem;
+    margin: 0;
+    flex-shrink: 0;
+    width: 1.4rem;
+    text-align: center;
+  }
+
+  /* Texto SIEMPRE visible en mobile (incluso si tiene .toggled) */
+  #accordionSidebar.sidebar .nav-item .nav-link span {
+    display: inline !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-size: 0.92rem !important;
+    font-weight: 600;
+  }
+
+  #accordionSidebar.sidebar .sidebar-brand-text {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  #accordionSidebar.sidebar .sidebar-heading {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  #accordionSidebar.sidebar .sidebar-card {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}
+
+
+/* ============================================================
+   DESKTOP  (>= 992px)
+   - Sidebar visible normal (14rem)
+   - .toggled = colapsada a 5.5rem (icons only)
+   - Backdrop y botón ✕ ocultos
+   (Tablet < 992px usa el comportamiento mobile)
+============================================================ */
+
+@media (min-width: 992px) {
+
+  /* Sidebar normal */
+  #accordionSidebar.sidebar {
+    position: static;
+    transform: none;
+    width: var(--sidebar-width, 14rem) !important;
+    height: auto;
+    overflow: visible;
+    transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Sidebar colapsada */
+  #accordionSidebar.sidebar.toggled {
+    transform: none;
+    width: var(--sidebar-width-collapsed, 5.5rem) !important;
+    overflow: hidden;
+  }
+
+  /* Ocultar textos cuando colapsada */
+  #accordionSidebar.sidebar.toggled .nav-link span,
+  #accordionSidebar.sidebar.toggled .sidebar-brand-text,
+  #accordionSidebar.sidebar.toggled .sidebar-heading,
+  #accordionSidebar.sidebar.toggled .sidebar-card,
+  #accordionSidebar.sidebar.toggled .collapse,
+  #accordionSidebar.sidebar.toggled .collapsing {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    display: none !important;
+  }
+
+  /* Nav-links normales (sidebar expandida) */
+  #accordionSidebar.sidebar:not(.toggled) .nav-item .nav-link {
+    text-align: left;
+    padding: 0.85rem 1rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  #accordionSidebar.sidebar:not(.toggled) .nav-item .nav-link i {
+    font-size: 0.9rem;
+    width: 1.3rem;
+    text-align: center;
+    margin: 0;
+  }
+
+  #accordionSidebar.sidebar:not(.toggled) .nav-item .nav-link span {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  /* Nav-links colapsados (sólo icono centrado) */
+  #accordionSidebar.sidebar.toggled .nav-item .nav-link {
+    text-align: center !important;
+    padding: 0.9rem 0 !important;
+    width: var(--sidebar-width-collapsed, 5.5rem) !important;
+    justify-content: center;
+    gap: 0;
+  }
+
+  #accordionSidebar.sidebar.toggled .nav-item .nav-link i {
+    font-size: 1.2rem;
+    margin: 0;
+    width: auto;
+    display: inline-block;
+  }
+
+  #accordionSidebar.sidebar.toggled .sidebar-brand {
+    padding: 1.5rem 0;
+  }
+
+  #accordionSidebar.sidebar.toggled .sidebar-brand-icon {
+    margin: 0;
+  }
+
+  #accordionSidebar.sidebar.toggled .nav-item.active > .nav-link {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-left: 3px solid var(--color-white);
+  }
+
+  .sidebar.toggled .nav-item .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+  }
+
+  /* Ocultos en desktop */
+  .sidebar-backdrop { display: none !important; }
+  .sidebar-close-btn { display: none !important; }
+}
+
+/* Heading "ADMINISTRACIÓN" en color de acento amarillo para diferenciarlo
+   del resto de los links blancos */
+.sidebar .sidebar-heading {
+  color: #FFC107 !important;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  padding: 0.6rem 1rem 0.2rem;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-card .btn-success {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--color-white);
+}
+
+
+/* ============================================================
+   5. Overrides Bootstrap: paleta de marca
+============================================================ */
+
+/* Botones warning → azules (marca) */
+.btn-warning {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--color-white);
+}
+
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active,
+.btn-warning:not(:disabled):not(.disabled):active {
+  background-color: var(--brand-dark) !important;
+  border-color: var(--brand-dark) !important;
+  color: var(--color-white) !important;
+}
+
+.btn-warning.disabled,
+.btn-warning:disabled {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--color-white);
+  opacity: 0.55;
+}
+
+.bg-warning {
+  background-color: var(--brand) !important;
+  color: var(--color-white) !important;
+}
+
+.bg-warning.text-white { color: var(--color-white) !important; }
+
+.text-warning { color: var(--brand) !important; }
+
+.border-warning      { border-color: var(--brand) !important; }
+.border-left-warning { border-left-color: var(--brand) !important; }
+.border-left-orange  { border-left: 0.25rem solid var(--brand) !important; }
+
+/* Outline buttons: rellenos por default, sin cambio en hover */
+.btn-outline-primary {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--color-white);
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary:not(:disabled):not(.disabled):active {
+  background-color: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: var(--color-white) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: var(--color-white);
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active,
+.btn-outline-secondary:not(:disabled):not(.disabled):active {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: var(--color-white) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline-success {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-white);
+}
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:active,
+.btn-outline-success:not(:disabled):not(.disabled):active {
+  background-color: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+  color: var(--color-white) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline-danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-white);
+}
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active,
+.btn-outline-danger:not(:disabled):not(.disabled):active {
+  background-color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  color: var(--color-white) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline-warning {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--color-white);
+}
+.btn-outline-warning:hover,
+.btn-outline-warning:focus,
+.btn-outline-warning:active,
+.btn-outline-warning:not(:disabled):not(.disabled):active {
+  background-color: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: var(--color-white) !important;
+  box-shadow: none !important;
+}
+
+.btn:focus,
+.btn.focus { box-shadow: none !important; }
+
+.badge-warning {
+  background-color: var(--brand) !important;
+  color: var(--color-white) !important;
+}
+
+
+/* ============================================================
+   6. Topbar
+============================================================ */
+
+.topbar {
+  position: relative;
+  z-index: 1040 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #f1f5f9;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+  height: 4.25rem;
+}
+
+.topbar .dropdown-menu {
+  z-index: 1050 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+}
+
+.topbar .img-profile {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.topbar .btn-warning {
+  font-size: var(--font-size-xs);
+  padding: 0.25rem 0.55rem;
+}
+
+.navbar-search .form-control {
+  border-radius: 50rem 0 0 50rem !important;
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+
+.navbar-search .input-group-append .btn {
+  border-radius: 0 50rem 50rem 0 !important;
+  padding-left: 1rem;
+  padding-right: 1.2rem;
+}
+
+/* Rediseño del Sidebar Lateral */
+.bg-gradient-primary.sidebar {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+}
+
+.sidebar .sidebar-brand {
+  height: 4.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar .sidebar-brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.sidebar .sidebar-heading {
+  color: #94a3b8 !important;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0 1.25rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar .nav-item {
+  margin: 0.2rem 0.75rem;
+}
+
+.sidebar .nav-item .nav-link {
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #cbd5e1 !important;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sidebar .nav-item .nav-link i {
+  font-size: 1.1rem;
+  width: 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.sidebar .nav-item:hover .nav-link {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(3px);
+}
+
+.sidebar .nav-item:hover .nav-link i {
+  color: #3b82f6;
+}
+
+.sidebar .nav-item.active .nav-link {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  font-weight: 700;
+}
+
+.sidebar .nav-item.active .nav-link i {
+  color: #ffffff !important;
+}
+
+.sidebar-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  margin: 0.75rem 0;
+}
+
+
+/* ============================================================
+   7. Inputs accesibles (mobile-first: >=16px evita zoom en iOS)
+============================================================ */
+
+.form-control,
+.form-select,
+.form-control-user {
+  font-size: 1rem;
+}
+
+/* ============================================================
+   7b. Ojo ver/ocultar contraseña dentro del input
+============================================================ */
+
+.campo-wrap {
+  position: relative;
+}
+
+.campo-wrap .form-control {
+  padding-right: 3rem;
+}
+
+.campo-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #6c757d;
+  padding: 0.25rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s ease;
+}
+
+.campo-toggle:hover { color: var(--brand, #2563EB); }
+.campo-toggle:focus { outline: none; color: var(--brand, #2563EB); }
+
+/* Estilos de Secciones y Checkboxes Modernos para Formularios */
+.form-section-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #2563eb;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid #eff6ff;
+}
+
+.custom-switch-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  width: 100%;
+}
+
+.custom-switch-card:hover {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.custom-switch-card input[type="checkbox"],
+.custom-switch-card .form-check-input,
+.custom-switch-card .custom-control-input {
+  position: static !important;
+  float: none !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0.25rem !important;
+  width: 1.3rem !important;
+  height: 1.3rem !important;
+  min-width: 1.3rem !important;
+  accent-color: #2563eb !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+  z-index: 2 !important;
+  flex-shrink: 0 !important;
+}
+
+.custom-switch-card .switch-label {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.925rem;
+  margin: 0;
+  cursor: pointer;
+  line-height: 1.3;
+}
+}
+
+
+/* ============================================================
+   8. Checkboxes / radios con la marca
+============================================================ */
+
+input[type="checkbox"],
+input[type="radio"],
+.form-check-input {
+  accent-color: var(--brand);
+  width: 1.1rem;
+  height: 1.1rem;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+input[type="checkbox"] + label,
+input[type="radio"] + label,
+label + input[type="checkbox"],
+label + input[type="radio"] { margin-left: 0.4rem; }
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-left: 0;
+  min-height: 1.6rem;
+}
+
+.form-check .form-check-input {
+  margin: 0;
+  position: static;
+}
+
+.form-check .form-check-label {
+  margin-bottom: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-group > input[type="checkbox"]:only-of-type {
+  display: inline-block;
+  margin-top: 0.35rem;
+}
+
+
+/* ============================================================
+   9. Estados visuales (dots, alerts)
+============================================================ */
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-dot.bg-ok      { background-color: var(--color-success); }
+.status-dot.bg-bajo    { background-color: var(--color-warning); }
+.status-dot.bg-agotado { background-color: var(--color-danger); }
+
+.color-dot {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--color-white);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+  border: 0;
+  border-left: 4px solid #ccc;
+}
+
+.alert-success { border-left-color: var(--color-success); }
+.alert-danger  { border-left-color: var(--color-danger); }
+.alert-warning {
+  border-left-color: var(--brand);
+  background-color: var(--brand-light);
+  color: var(--brand-deep);
+}
+.alert-info    { border-left-color: var(--brand-dark); }
+
+
+/* ============================================================
+   10. POS — cards de producto (legacy)
+============================================================ */
+
+.pos-product-card {
+  background: var(--color-white);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-base),
+              transform var(--transition-fast);
+  width: 100%;
+  cursor: pointer;
+}
+
+.pos-product-card:hover {
+  border-color: var(--brand);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.pos-product-card:active { transform: scale(0.97); }
+
+.pos-product-thumb {
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.pos-product-thumb img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+.pos-product-body {
+  padding: var(--space-sm) 0.6rem;
+  text-align: center;
+  font-size: var(--font-size-sm);
+}
+
+
+/* ============================================================
+   11. POS — carrito
+============================================================ */
+
+.pos-cart .list-group-item {
+  padding: var(--space-sm) 0.6rem;
+  background-color: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: var(--radius-sm) !important;
+  margin-bottom: 6px;
+}
+
+.pos-totals {
+  background-color: var(--brand-light);
+  border-top: 1px dashed var(--brand-accent);
+  padding: 0.75rem var(--space-md);
+}
+
+.pos-payment {
+  background-color: #f7f9fc;
+  border-top: 1px solid #e7eaee;
+  padding: 0.75rem var(--space-md);
+}
+
+
+/* ============================================================
+   12. Placeholder de imagen
+============================================================ */
+
+.product-placeholder {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: #888;
+  background-color: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+
+/* ============================================================
+   13. Animaciones reducidas (accesibilidad)
+============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #accordionSidebar.sidebar,
+  #content-wrapper,
+  .sidebar .nav-link span,
+  .sidebar .sidebar-brand-text,
+  .sidebar .sidebar-heading,
+  .sidebar .sidebar-card {
+    transition: none !important;
+  }
+}
+
+
+/* ============================================================
+   13b. Patrones visuales reutilizables (hero / cards / tablas)
+============================================================ */
+
+/* ----- Hero header con gradient ----- */
+.page-hero {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.18);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.page-hero::before {
+  content: "";
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.page-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -60px; right: 100px;
+  width: 120px; height: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.page-hero h1 {
+  font-weight: 800;
+  margin: 0;
+  font-size: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.page-hero p,
+.page-hero .lead {
+  opacity: 0.88;
+  margin: 0.35rem 0 0 0;
+  font-size: 0.95rem;
+  position: relative;
+  z-index: 1;
+}
+
+.page-hero .hero-actions {
+  margin-top: 1rem;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.page-hero .hero-actions .btn {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--brand-deep);
+  border: none;
+  font-weight: 700;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.page-hero .hero-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  background: #fff;
+}
+
+.page-hero .hero-actions .btn-ghost {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+.page-hero .hero-actions .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.page-hero .hero-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.page-hero .stat {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  min-width: 130px;
+  flex: 1 1 130px;
+}
+
+.page-hero .stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  opacity: 0.85;
+  letter-spacing: 0.05em;
+}
+
+.page-hero .stat-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
+
+@media (min-width: 768px) {
+  .page-hero { padding: 2rem 2.25rem; }
+  .page-hero h1 { font-size: 1.85rem; }
+}
+
+
+/* ----- Card moderna ----- */
+.modern-card {
+  border-radius: 14px;
+  border: none !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.22s ease;
+}
+
+.modern-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+}
+
+.modern-card .card-header {
+  background: #fff;
+  border-bottom: 1px solid #f1f3f9;
+  padding: 1rem 1.25rem;
+}
+
+.modern-card .card-header h6,
+.modern-card .card-header h2,
+.modern-card .card-header h3 {
+  color: var(--brand-deep);
+  font-weight: 700;
+  margin: 0;
+}
+
+
+/* ----- Stat cards del dashboard ----- */
+.stat-card {
+  position: relative;
+  border-radius: 14px;
+  border: none;
+  background: #fff;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.22s ease;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .stat-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.4rem;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.stat-card .stat-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+}
+
+.stat-card .stat-number {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--color-heading, #2e2f3a);
+  line-height: 1.15;
+  margin: 0;
+}
+
+.stat-card .stat-foot {
+  font-size: 0.78rem;
+  color: var(--color-muted, #858796);
+  margin-top: 0.3rem;
+}
+
+.stat-card.stat-success    { border-left: 4px solid var(--color-success); }
+.stat-card.stat-success    .stat-label,
+.stat-card.stat-success    .stat-icon { color: var(--color-success); }
+
+.stat-card.stat-info       { border-left: 4px solid #36b9cc; }
+.stat-card.stat-info       .stat-label,
+.stat-card.stat-info       .stat-icon { color: #36b9cc; }
+
+.stat-card.stat-primary    { border-left: 4px solid var(--brand); }
+.stat-card.stat-primary    .stat-label,
+.stat-card.stat-primary    .stat-icon { color: var(--brand); }
+
+.stat-card.stat-warning    { border-left: 4px solid #f6c23e; }
+.stat-card.stat-warning    .stat-label,
+.stat-card.stat-warning    .stat-icon { color: #f6c23e; }
+
+.stat-card.stat-danger     { border-left: 4px solid var(--color-danger); }
+.stat-card.stat-danger     .stat-label,
+.stat-card.stat-danger     .stat-icon { color: var(--color-danger); }
+
+
+/* ----- Quick-action card (cards de acceso rápido grandes) ----- */
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  transition: transform 0.18s ease, box-shadow 0.22s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.quick-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  color: inherit;
+}
+
+.quick-action .qa-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  color: #fff;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.quick-action.qa-blue   .qa-icon { background: linear-gradient(135deg, #3b82f6, var(--brand-deep)); }
+.quick-action.qa-green  .qa-icon { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.quick-action.qa-orange .qa-icon { background: linear-gradient(135deg, #fb923c, #ea580c); }
+.quick-action.qa-purple .qa-icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.quick-action.qa-pink   .qa-icon { background: linear-gradient(135deg, #f472b6, #db2777); }
+.quick-action.qa-cyan   .qa-icon { background: linear-gradient(135deg, #22d3ee, #0891b2); }
+
+.quick-action .qa-title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+  color: var(--color-heading, #2e2f3a);
+}
+
+.quick-action .qa-sub {
+  font-size: 0.82rem;
+  color: var(--color-muted, #858796);
+  margin: 0;
+}
+
+
+/* ----- Tabla moderna ----- */
+.modern-table {
+  margin: 0;
+}
+
+.modern-table thead th {
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #6c757d;
+  background: #fafbfd;
+  border-bottom: 2px solid #e3e6f0;
+  padding: 0.85rem 1rem;
+  font-weight: 700;
+}
+
+.modern-table tbody td {
+  padding: 0.9rem 1rem;
+  vertical-align: middle;
+  border-color: #f1f3f9;
+}
+
+.modern-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.modern-table tbody tr:hover {
+  background-color: #f8fbff;
+}
+
+.modern-table .row-action-btn {
+  width: 34px; height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ----- Botón de acción primario grande ----- */
+.btn-action-primary {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-action-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5);
+  color: #fff;
+}
+
+
+/* ----- Section header (pequeño separador con borde) ----- */
+.section-heading {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-deep);
+  margin: 1.25rem 0 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--brand);
+}
+
+
+/* ----- Profile / metadatos en grid ----- */
+.profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.profile-meta-item {
+  background: var(--brand-light);
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  border-left: 4px solid var(--brand);
+  flex: 1 1 200px;
+}
+
+.profile-meta-item small {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--brand-deep);
+  margin-bottom: 0.2rem;
+}
+
+.profile-meta-item strong {
+  font-size: 1.05rem;
+  color: var(--color-heading);
+}
+
+
+/* ----- Confirm delete (centered card) ----- */
+.confirm-delete-card {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.confirm-delete-card .icon-bubble {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1.25rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #b45309;
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.25);
+}
+
+.confirm-delete-card.danger .icon-bubble {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #b91c1c;
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
+}
+
+
+/* ----- Animaciones globales ----- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRow {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+
+/* ============================================================
+   14. Tablet (mobile-first: >= 576px small phones grandes / sm)
+============================================================ */
+
+@media (min-width: 576px) {
+  /* En sm+ los botones del topbar pueden ser un poco más grandes */
+  .topbar .btn-warning {
+    font-size: var(--font-size-sm);
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+
+/* ============================================================
+   15. Tablet (>= 768px / md)
+============================================================ */
+
+@media (min-width: 768px) {
+  /* Barra de filtros: una fila horizontal */
+  .filter-bar {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .filter-bar .filter-search {
+    max-width: 360px;
+  }
+
+  .filter-bar .filter-controls {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .filter-bar .filter-controls > * {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+
+  .filter-bar .filter-controls > button,
+  .filter-bar .filter-controls > .btn {
+    min-width: 0;
+  }
+}
+
+
+/* ============================================================
+   16. Desktop (>= 992px / lg)
+============================================================ */
+
+/* (sin reglas específicas todavía; los componentes ya se ven bien en lg) */
+
+
+/* ============================================================
+   17. Desktop grande (>= 1200px / xl)
+============================================================ */
+
+/* (sin reglas específicas todavía) */
+
+
+/* ============================================================
+   18. Popup flotante de confirmación (acciones riesgosas)
+============================================================ */
+
+.confirm-popup {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  width: 380px;
+  max-width: calc(100vw - 2rem);
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+}
+
+.confirm-popup.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.confirm-popup .card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.confirm-popup .card-header {
+  border-bottom: 1px solid #f1f3f9;
+  padding: 0.9rem 1.15rem;
+}
+
+.confirm-popup .card-header .close {
+  margin: 0;
+  padding: 0 0 0 0.5rem;
+}
+
+.confirm-popup .card-body {
+  padding: 1rem 1.15rem;
+  color: var(--color-muted, #6c757d);
+  font-size: 0.95rem;
+}
+
+.confirm-popup .card-footer {
+  border-top: 1px solid #f1f3f9;
+  padding: 0.85rem 1.15rem;
+}
+
+/* Custom Sidebar Logo Image */
+.sidebar-logo-img {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-brand:hover .sidebar-logo-img {
+  transform: scale(1.1);
+}

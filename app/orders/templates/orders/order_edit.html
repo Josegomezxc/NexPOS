@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar Pedido {{ object.numero }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">Pedidos</a></li>
+<li class="breadcrumb-item"><a href="{{ object.get_absolute_url }}">{{ object.numero }}</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera del formulario de pedido">
+    <h1><i class="fas fa-pencil-alt"></i> Editar Pedido {{ object.numero }}</h1>
+    <p class="lead">Modificá las observaciones o notas del pedido. Para modificar productos, utilizá el módulo POS.</p>
+    <div class="hero-actions">
+        <a href="{{ object.get_absolute_url }}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Volver al Pedido
+        </a>
+    </div>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card modern-card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-edit text-primary mr-1"></i> Datos Generales del Pedido
+                </h2>
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="card-body">
+                    <div class="form-row">
+                        {% for field in form %}
+                        {% if field.name != 'razon_social' or object.tipo_identificacion == '04' %}
+                        <div class="form-group col-md-{% if field.name == 'notas' %}12{% else %}6{% endif %}">
+                            {% if field.field.widget.input_type == 'checkbox' %}
+                                <div class="custom-control custom-checkbox mt-md-4">
+                                    {{ field }}
+                                    <label class="custom-control-label font-weight-bold text-dark" for="{{ field.id_for_label }}">
+                                        {{ field.label }}
+                                    </label>
+                                </div>
+                            {% else %}
+                                <label for="{{ field.id_for_label }}" class="font-weight-bold">{{ field.label }}</label>
+                                {{ field }}
+                            {% endif %}
+
+                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                            {% if field.errors %}<small class="text-danger d-block mt-1">{{ field.errors|join:", " }}</small>{% endif %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-top-0 pt-0 pb-4 px-4 d-flex justify-content-between">
+                    <a href="{{ object.get_absolute_url }}" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 font-weight-bold shadow-sm">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

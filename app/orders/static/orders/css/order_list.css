@@ -1,0 +1,112 @@
+/* ============================================================
+   Estilos del listado de pedidos (Card Grid & Filtros)
+============================================================ */
+
+@import url('_variables.css');
+
+.order-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.order-filter-form .filter-q {
+  flex: 1 1 100%;
+}
+
+.order-filter-form .filter-estado,
+.order-filter-form .filter-fecha {
+  flex: 1 1 140px;
+}
+
+@media (min-width: 768px) {
+  .order-filter-form .filter-q {
+    flex: 1 1 220px;
+    max-width: 320px;
+    min-width: 220px;
+  }
+  .order-filter-form .filter-estado {
+    margin-left: auto;
+    flex-grow: 0;
+    min-width: 170px;
+  }
+  .order-filter-form .filter-fecha {
+    flex-grow: 0;
+    min-width: 150px;
+  }
+}
+
+/* Card Grid de Pedidos */
+.order-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.order-card {
+  border: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  cursor: pointer;
+}
+
+.order-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+.order-card-header {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-card-number {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #f8fafc;
+}
+
+.order-card-body {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.order-card-total {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #d97706;
+  margin-bottom: 0.5rem;
+}
+
+.order-card-meta {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.order-card-footer {
+  padding: 0.85rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}

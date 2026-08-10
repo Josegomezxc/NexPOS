@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'users/css/dashboard_admin.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# Hero Header del Dashboard #}
+<section class="page-hero" aria-label="Cabecera del dashboard">
+    <h1><i class="fas fa-store"></i> Panel de Administración</h1>
+    <p class="lead">Resumen en vivo del negocio · {% now "l j \d\e F \d\e Y" %}</p>
+    <div class="hero-actions">
+        <a href="{% url 'orders:pos' %}" class="btn">
+            <i class="fas fa-cash-register"></i> Tomar pedido
+        </a>
+        <a href="{% url 'caja:index' %}" class="btn btn-ghost">
+            <i class="fas fa-coins"></i> Ir a Caja
+        </a>
+    </div>
+</section>
+
+{# 4 Métricas de Ventas y Estado #}
+<div class="row mb-4">
+    <div class="col-12 col-sm-6 col-xl-3 mb-3 mb-xl-0">
+        <div class="db-stat-card stat-green">
+            <div class="db-stat-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="db-stat-label">Ventas Hoy</div>
+            <div class="db-stat-value">${{ ventas_hoy_total|floatformat:2 }}</div>
+            <div class="db-stat-footer">
+                <i class="fas fa-check-circle text-success"></i> {{ ventas_hoy_cantidad }} pedido{% if ventas_hoy_cantidad != 1 %}s{% endif %} completados
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3 mb-3 mb-xl-0">
+        <div class="db-stat-card stat-blue">
+            <div class="db-stat-icon">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="db-stat-label">Esta Semana</div>
+            <div class="db-stat-value">${{ ventas_semana_total|floatformat:2 }}</div>
+            <div class="db-stat-footer">
+                <i class="fas fa-chart-line text-primary"></i> {{ ventas_semana_cantidad }} pedido{% if ventas_semana_cantidad != 1 %}s{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3 mb-3 mb-xl-0">
+        <div class="db-stat-card stat-purple">
+            <div class="db-stat-icon">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <div class="db-stat-label">Este Mes</div>
+            <div class="db-stat-value">${{ ventas_mes_total|floatformat:2 }}</div>
+            <div class="db-stat-footer">
+                <i class="fas fa-shopping-bag text-purple"></i> {{ ventas_mes_cantidad }} pedido{% if ventas_mes_cantidad != 1 %}s{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="db-stat-card stat-amber">
+            <div class="db-stat-icon">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="db-stat-label">Por Cobrar en Caja</div>
+            <div class="db-stat-value">{{ pedidos_pendientes }}</div>
+            <div class="db-stat-footer">
+                <a href="{% url 'caja:index' %}" class="text-warning font-weight-bold text-decoration-none">
+                    <i class="fas fa-arrow-right"></i> Cobrar pendientes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Atajos Táctiles Rápidos #}
+<h2 class="h5 font-weight-bold text-dark mb-3">
+    <i class="fas fa-bolt text-warning mr-1"></i> Accesos Rápidos
+</h2>
+<div class="db-qa-grid mb-4">
+    <a href="{% url 'orders:pos' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+            <i class="fas fa-cash-register"></i>
+        </div>
+        <div class="db-qa-title">Tomar Pedido</div>
+        <p class="db-qa-sub">Pos de venta táctil</p>
+    </a>
+
+    <a href="{% url 'caja:index' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <i class="fas fa-coins"></i>
+        </div>
+        <div class="db-qa-title">Módulo Caja</div>
+        <p class="db-qa-sub">Cobrar tickets de clientes</p>
+    </a>
+
+    <a href="{% url 'products:product_list' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+            <i class="fas fa-utensils"></i>
+        </div>
+        <div class="db-qa-title">{{ productos_activos }} Productos</div>
+        <p class="db-qa-sub">Menú activo del negocio</p>
+    </a>
+
+    <a href="{% url 'users:empleado_list' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="db-qa-title">{{ empleados_activos }} Empleados</div>
+        <p class="db-qa-sub">Equipo de trabajo</p>
+    </a>
+</div>
+
+{# Gráficos de Análisis #}
+<h2 class="h5 font-weight-bold text-dark mb-3">
+    <i class="fas fa-chart-line text-primary mr-1"></i> Análisis de Ventas
+</h2>
+<div class="row mb-4">
+    <div class="col-xl-7 col-lg-7 mb-4 mb-lg-0">
+        <div class="card modern-card chart-card h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h3 class="h6 font-weight-bold text-dark m-0">
+                    <i class="fas fa-chart-area text-primary mr-1"></i> <span id="chart-linea-titulo">Ventas por Período</span>
+                </h3>
+                <select id="chart-periodo-select" class="form-control form-control-sm w-auto font-weight-bold border-primary text-primary" aria-label="Seleccionar período">
+                    <option value="7d" selected>Últimos 7 días</option>
+                    <option value="30d">Últimos 30 días</option>
+                    <option value="12m">Últimos 12 meses</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="chart-ventas-dias" role="img" aria-label="Gráfico de ventas por período"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5 col-lg-5">
+        <div class="card modern-card chart-card h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h3 class="h6 font-weight-bold text-dark m-0">
+                    <i class="fas fa-chart-bar text-primary mr-1"></i> Ingresos por Categoría
+                </h3>
+                <select id="chart-cat-periodo-select" class="form-control form-control-sm w-auto font-weight-bold border-primary text-primary" aria-label="Seleccionar período de categoría">
+                    <option value="mes" selected>Este mes</option>
+                    <option value="7d">Últimos 7 días</option>
+                    <option value="30d">Últimos 30 días</option>
+                    <option value="12m">Últimos 12 meses</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie">
+                    <canvas id="chart-ventas-categorias" role="img" aria-label="Gráfico de barras de ventas por categoría"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Top productos del mes + Últimos pedidos #}
+<div class="row">
+    <div class="col-lg-5 mb-4">
+        <div class="card modern-card h-100">
+            <div class="card-header bg-white">
+                <h3 class="h6 font-weight-bold text-dark m-0">
+                    <i class="fas fa-trophy text-warning mr-1"></i> Top 5 Productos del Mes
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table modern-table mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 45px;">Pos.</th>
+                                <th>Producto</th>
+                                <th class="text-center">Cant.</th>
+                                <th class="text-right">Ingresos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in top_productos %}
+                            <tr>
+                                <td class="align-middle">
+                                    {% if forloop.counter == 1 %}
+                                        <span class="rank-badge rank-1" title="Top 1">🥇</span>
+                                    {% elif forloop.counter == 2 %}
+                                        <span class="rank-badge rank-2" title="Top 2">🥈</span>
+                                    {% elif forloop.counter == 3 %}
+                                        <span class="rank-badge rank-3" title="Top 3">🥉</span>
+                                    {% else %}
+                                        <span class="rank-badge rank-other">#{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle font-weight-bold text-dark">{{ p.producto__nombre }}</td>
+                                <td class="text-center align-middle font-weight-bold text-secondary">{{ p.cantidad|floatformat:0 }}</td>
+                                <td class="text-right align-middle font-weight-bold text-warning">${{ p.ingresos|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-utensils fa-2x d-block mb-2 text-muted"></i>
+                                    Sin ventas registradas este mes.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7 mb-4">
+        <div class="card modern-card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h3 class="h6 font-weight-bold text-dark m-0">
+                    <i class="fas fa-history text-primary mr-1"></i> Últimos Pedidos
+                </h3>
+                <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table modern-table mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Número</th>
+                                <th class="d-none d-md-table-cell">Vendedor</th>
+                                <th>Estado</th>
+                                <th class="text-right">Total</th>
+                                <th class="d-none d-sm-table-cell">Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in ultimos_pedidos %}
+                            <tr>
+                                <td class="align-middle">
+                                    <a href="{{ p.get_absolute_url }}" class="font-weight-bold">{{ p.numero }}</a>
+                                </td>
+                                <td class="d-none d-md-table-cell align-middle">{{ p.vendedor.get_full_name|default:p.vendedor.username }}</td>
+                                <td class="align-middle">
+                                    {% if p.estado == 'completado' %}
+                                        <span class="badge badge-success">Completado</span>
+                                    {% elif p.estado == 'pendiente' %}
+                                        <span class="badge badge-warning">Pendiente</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-right align-middle font-weight-bold text-dark">${{ p.total|floatformat:2 }}</td>
+                                <td class="d-none d-sm-table-cell align-middle"><small class="text-muted">{{ p.creado|date:"d/m H:i" }}</small></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    Sin pedidos registrados aún. <a href="{% url 'orders:pos' %}">Tomá el primero en el POS</a>.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Datos para los gráficos Chart.js #}
+{{ chart_data|json_script:"dashboard-chart-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'sb-admin-2/vendor/chart.js/Chart.min.js' %}"></script>
+<script src="{% static 'users/js/dashboard_admin.js' %}"></script>
+{% endblock %}

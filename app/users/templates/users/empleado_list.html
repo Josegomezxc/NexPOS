@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Empleados{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Empleados</li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'users/css/empleado_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera de empleados">
+    <h1><i class="fas fa-users"></i> Empleados y usuarios</h1>
+    <p class="lead">Administrá quién tiene acceso al sistema y con qué rol. Clic en cualquier tarjeta para ver detalles y gestionar.</p>
+    <div class="hero-actions">
+        <a href="{% url 'users:empleado_create' %}" class="btn">
+            <i class="fas fa-user-plus"></i> Nuevo usuario
+        </a>
+    </div>
+</section>
+
+{# Filtros en una sola línea #}
+<div class="card modern-card mb-4">
+    <div class="card-body py-3">
+        <form method="get" id="empleadoFilterForm" class="empleado-filter-form" role="search">
+            <div class="input-group filter-q">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                </div>
+                <input type="search" name="q" id="q-input" value="{{ q }}"
+                       class="form-control border-left-0 auto-realtime-search"
+                       placeholder="Nombre, usuario..." autocomplete="off">
+            </div>
+            <select name="rol" class="form-control filter-auto filter-rol" aria-label="Rol">
+                <option value="">Rol: todos</option>
+                {% for k, v in roles %}<option value="{{ k }}" {% if k == rol %}selected{% endif %}>{{ v }}</option>{% endfor %}
+            </select>
+            <select name="estado" class="form-control filter-auto filter-estado" aria-label="Estado">
+                <option value="">Estado: todos</option>
+                <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+                <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+            </select>
+            <noscript>
+                <button class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+            </noscript>
+        </form>
+    </div>
+</div>
+
+{# Cuadrícula de Tarjetas de Empleados #}
+<div class="empleado-card-grid mb-4">
+    {% for emp in empleados %}
+    <div class="empleado-card"
+        data-id="{{ emp.id }}"
+        data-username="{{ emp.username }}"
+        data-nombre="{{ emp.get_full_name|default:emp.username }}"
+        data-email="{{ emp.email|default:'' }}"
+        data-es-admin="{% if emp.profile.es_admin %}1{% else %}0{% endif %}"
+        data-activo="{% if emp.is_active %}1{% else %}0{% endif %}"
+        data-is-self="{% if emp.pk == user.pk %}1{% else %}0{% endif %}"
+        data-joined="{{ emp.date_joined|date:'d/m/Y' }}"
+        data-edit-url="{% url 'users:empleado_update' emp.pk %}"
+        data-delete-url="{% url 'users:empleado_delete' emp.pk %}"
+        data-activate-url="{% url 'users:empleado_activate' emp.pk %}"
+        tabindex="0" role="button" aria-label="Ver detalles de {{ emp.username }}">
+        
+        <div class="empleado-card-header">
+            {% if emp.is_active %}
+                <span class="badge badge-success empleado-status-badge">Activo</span>
+            {% else %}
+                <span class="badge badge-danger empleado-status-badge">Inactivo</span>
+            {% endif %}
+
+            <div class="empleado-avatar {% if emp.profile.es_admin %}avatar-admin{% else %}avatar-empleado{% endif %}">
+                <i class="fas {% if emp.profile.es_admin %}fa-user-shield{% else %}fa-user-tie{% endif %}"></i>
+            </div>
+        </div>
+
+        <div class="empleado-card-body">
+            <h3 class="empleado-card-name">{{ emp.get_full_name|default:emp.username }}</h3>
+            <div class="empleado-card-username">@{{ emp.username }}</div>
+
+            {% if emp.profile.es_admin %}
+                <span class="badge badge-primary empleado-role-badge">
+                    <i class="fas fa-crown mr-1"></i> Administrador
+                </span>
+            {% else %}
+                <span class="badge badge-secondary empleado-role-badge">
+                    <i class="fas fa-user mr-1"></i> Empleado
+                </span>
+            {% endif %}
+
+            <div class="empleado-info-item">
+                <i class="fas fa-envelope text-muted"></i>
+                <span>{{ emp.email|default:"Sin correo asignado" }}</span>
+            </div>
+            <div class="empleado-info-item">
+                <i class="fas fa-calendar-alt text-muted"></i>
+                <span>Registrado: {{ emp.date_joined|date:"d/m/Y" }}</span>
+            </div>
+        </div>
+
+        <div class="empleado-card-footer justify-content-center">
+            <a href="{% url 'users:empleado_update' emp.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                <i class="fas fa-pencil-alt"></i> Editar
+            </a>
+            {% if emp.pk != user.pk %}
+                {% if emp.is_active %}
+                    <a href="{% url 'users:empleado_delete' emp.pk %}" class="btn btn-sm btn-danger btn-confirm"
+                        title="Desactivar"
+                        data-confirm-titulo="¿Desactivar empleado?"
+                        data-confirm="¿Desactivar a {{ emp.get_full_name|default:emp.username }}? Perderá el acceso al sistema. Podés reactivarlo después."
+                        data-confirm-boton="Sí, desactivar"
+                        data-confirm-clase="btn-danger"
+                        data-confirm-icono="fas fa-user-slash"
+                        data-confirm-url="{% url 'users:empleado_delete' emp.pk %}">
+                        <i class="fas fa-user-slash"></i> Desactivar
+                    </a>
+                {% else %}
+                    <form method="post" action="{% url 'users:empleado_activate' emp.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success" title="Reactivar">
+                            <i class="fas fa-user-check"></i> Reactivar
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm">
+        <i class="fas fa-users-slash fa-3x d-block mb-3 text-muted"></i>
+        <h5>No se encontraron empleados</h5>
+        <p class="text-muted">Intentá cambiar los filtros o registra un nuevo empleado en el sistema.</p>
+        <a href="{% url 'users:empleado_create' %}" class="btn btn-primary mt-2">
+            <i class="fas fa-user-plus"></i> Registrar usuario
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{# Modal de detalle del empleado #}
+<div class="modal fade" id="empleadoModal" tabindex="-1" role="dialog" aria-labelledby="empleadoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold" id="empleadoModalLabel">
+                    <i class="fas fa-user-circle"></i> Detalle del usuario
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="d-flex justify-content-center mb-3">
+                    <div id="emp-modal-avatar" style="width: 84px; height: 84px; font-size: 2.2rem;"></div>
+                </div>
+                <h4 class="mb-1 font-weight-bold" id="emp-modal-nombre"></h4>
+                <div class="text-muted mb-2 font-weight-500" id="emp-modal-username"></div>
+                <div class="mb-3" id="emp-modal-rol"></div>
+
+                <div class="bg-light rounded p-3 text-left">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted font-weight-bold text-uppercase">Correo electrónico</span>
+                        <span class="font-weight-600 text-dark" id="emp-modal-email"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted font-weight-bold text-uppercase">Fecha de registro</span>
+                        <span class="font-weight-600 text-dark" id="emp-modal-joined"></span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted font-weight-bold text-uppercase">Estado actual</span>
+                        <div id="emp-modal-estado"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="#" id="emp-modal-btn-editar" class="btn btn-primary">
+                    <i class="fas fa-pencil-alt"></i> Editar
+                </a>
+                <a href="#" id="emp-modal-btn-desactivar" class="btn btn-danger btn-confirm">
+                    <i class="fas fa-user-slash"></i> Desactivar
+                </a>
+                <form method="post" action="" id="emp-modal-form-activar" class="m-0 d-none">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-user-check"></i> Reactivar
+                    </button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'users/js/empleado_list.js' %}"></script>
+{% endblock %}

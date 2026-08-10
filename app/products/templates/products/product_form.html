@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Producto - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'products:product_list' %}">Menú</a></li>
+<li class="breadcrumb-item active">{% if object %}Editar {{ object.nombre }}{% else %}Nuevo Producto{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera del formulario de producto">
+    <h1>
+        <i class="fas fa-utensils"></i>
+        {% if object %}Editar Producto: {{ object.nombre }}{% else %}Nuevo Producto{% endif %}
+    </h1>
+    <p class="lead">{% if object %}Actualizá la información, precio o foto del producto.{% else %}Cargá un nuevo producto gastronómico para venderlo en el punto de venta (POS).{% endif %}</p>
+    <div class="hero-actions">
+        <a href="{% url 'products:product_list' %}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Volver al Menú
+        </a>
+    </div>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-9">
+        <div class="card modern-card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-edit text-primary mr-1"></i> Formulario de Producto
+                </h2>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div class="card-body p-4">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-4" role="alert">
+                        <i class="fas fa-exclamation-circle mr-1"></i> {{ form.non_field_errors|join:", " }}
+                    </div>
+                    {% endif %}
+
+                    {# Sección 1: Información Básica #}
+                    <div class="form-section-title mt-0">
+                        <i class="fas fa-info-circle"></i> 1. Información Principal
+                    </div>
+                    <div class="form-row mb-3">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="{{ form.nombre.id_for_label }}" class="font-weight-bold">Nombre del Producto <span class="text-danger">*</span></label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<small class="text-danger d-block mt-1">{{ form.nombre.errors|join:", " }}</small>{% endif %}
+                        </div>
+
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="{{ form.categoria.id_for_label }}" class="font-weight-bold">Categoría <span class="text-danger">*</span></label>
+                            {{ form.categoria }}
+                            {% if form.categoria.errors %}<small class="text-danger d-block mt-1">{{ form.categoria.errors|join:", " }}</small>{% endif %}
+                        </div>
+                    </div>
+
+                    {# Sección 2: Precio y Posición en Menú #}
+                    <div class="form-section-title">
+                        <i class="fas fa-dollar-sign"></i> 2. Precio y Ubicación
+                    </div>
+                    <div class="form-row mb-3">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="{{ form.precio.id_for_label }}" class="font-weight-bold">Precio ($) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-light font-weight-bold">$</span>
+                                </div>
+                                {{ form.precio }}
+                            </div>
+                            {% if form.precio.errors %}<small class="text-danger d-block mt-1">{{ form.precio.errors|join:", " }}</small>{% endif %}
+                        </div>
+
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="{{ form.orden.id_for_label }}" class="font-weight-bold">Orden en Menú</label>
+                            {{ form.orden }}
+                            <small class="form-text text-muted">Posición relativa en la tarjeta del POS.</small>
+                            {% if form.orden.errors %}<small class="text-danger d-block mt-1">{{ form.orden.errors|join:", " }}</small>{% endif %}
+                        </div>
+                    </div>
+
+                    {# Sección 3: Descripción e Imagen #}
+                    <div class="form-section-title">
+                        <i class="fas fa-align-left"></i> 3. Descripción y Fotografía
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="{{ form.descripcion.id_for_label }}" class="font-weight-bold">Descripción / Ingredientes</label>
+                        {{ form.descripcion }}
+                        <small class="form-text text-muted">Breve detalle para el cajero o cliente (ej: carne 150g, cheddar, papas).</small>
+                        {% if form.descripcion.errors %}<small class="text-danger d-block mt-1">{{ form.descripcion.errors|join:", " }}</small>{% endif %}
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="{{ form.imagen.id_for_label }}" class="font-weight-bold d-block">Foto del Producto</label>
+                        
+                        {% if object and object.imagen %}
+                        <div class="mb-3 p-3 bg-light rounded border d-flex align-items-center gap-3" style="max-width: 450px;">
+                            <img src="{{ object.imagen.url }}" alt="{{ object.nombre }}" class="rounded shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
+                            <div>
+                                <strong class="d-block text-dark">{{ object.nombre }}</strong>
+                                <small class="text-success font-weight-bold"><i class="fas fa-check-circle"></i> Imagen actual guardada</small>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="p-3 bg-light rounded border">
+                            {{ form.imagen }}
+                            <small class="form-text text-muted mt-2">Formatos aceptados: JPG, PNG, WEBP. Tamaño máximo 5 MB.</small>
+                        </div>
+                        {% if form.imagen.errors %}<small class="text-danger d-block mt-1">{{ form.imagen.errors|join:", " }}</small>{% endif %}
+                    </div>
+
+                    {# Sección 4: Disponibilidad del Producto (Checkbox Moderno) #}
+                    <div class="form-section-title">
+                        <i class="fas fa-toggle-on"></i> 4. Estado de Venta
+                    </div>
+                    <div class="form-group mb-2">
+                        <label class="custom-switch-card" for="{{ form.activo.id_for_label }}">
+                            {{ form.activo }}
+                            <div>
+                                <span class="switch-label d-block">Producto Activo (Disponible para Venta en POS)</span>
+                                <small class="text-muted d-block mt-1">Si está desactivado, el producto no aparecerá en el menú del punto de venta.</small>
+                            </div>
+                        </label>
+                        {% if form.activo.errors %}<small class="text-danger d-block mt-1">{{ form.activo.errors|join:", " }}</small>{% endif %}
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between">
+                    <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-arrow-left"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 font-weight-bold shadow-sm">
+                        <i class="fas fa-save mr-1"></i> Guardar Producto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

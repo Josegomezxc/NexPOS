@@ -1,0 +1,296 @@
+/* ============================================================
+   ticket.css — diseño mejorado del ticket
+============================================================ */
+
+@import url('_variables.css');
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, var(--tk-bg) 0%, #e5e7eb 100%);
+  margin: 0;
+  padding: 1.5rem 1rem;
+  min-height: 100vh;
+  color: var(--tk-text);
+}
+
+/* ===== Botón "Imprimir" arriba ===== */
+button.print {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 auto 1.5rem auto;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--tk-brand) 0%, var(--tk-brand-deep) 100%);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+button.print:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.5);
+}
+
+button.print i { font-size: 1rem; }
+
+/* ===== Ticket "papel" ===== */
+.ticket {
+  width: var(--tk-width);
+  margin: 0 auto;
+  background: var(--tk-paper);
+  border-radius: var(--tk-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  padding: 1.75rem 1.5rem;
+  font-family: 'Courier New', monospace;
+}
+
+/* Borde dentado superior e inferior (efecto de ticket arrancado) */
+.ticket::before,
+.ticket::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background-image: radial-gradient(circle at 8px 8px, transparent 6px, var(--tk-paper) 6.5px);
+  background-size: 16px 16px;
+  background-repeat: repeat-x;
+}
+
+.ticket::before {
+  top: -8px;
+  background-image: radial-gradient(circle at 8px 0, var(--tk-bg) 6px, var(--tk-paper) 6.5px);
+}
+
+.ticket::after {
+  bottom: -8px;
+  background-image: radial-gradient(circle at 8px 16px, var(--tk-bg) 6px, var(--tk-paper) 6.5px);
+}
+
+/* ===== Brand del local ===== */
+.brand {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin: 0;
+  color: var(--tk-brand-deep);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.brand-sub {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--tk-muted);
+  letter-spacing: 0.5px;
+  margin: 0.25rem 0 0.75rem 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Separadores con guion punteado clásico de tickets */
+hr {
+  border: none;
+  border-top: 1.5px dashed #cbd5e1;
+  margin: 0.85rem 0;
+}
+
+hr.hr-total {
+  border-top: 2px solid var(--tk-brand-deep);
+  margin: 0.5rem 0;
+}
+
+/* ===== Header info ===== */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+.row.small,
+.small {
+  font-size: 0.78rem;
+  color: var(--tk-muted);
+  line-height: 1.4;
+}
+
+.row strong { color: var(--tk-brand-deep); font-weight: 700; }
+
+/* ===== Tabla de items (4 columnas) ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  margin: 0.25rem 0;
+}
+
+table th,
+table td {
+  padding: 0.3rem 0.15rem;
+  vertical-align: top;
+}
+
+/* Encabezado de tabla */
+.table-header th {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tk-muted);
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+
+.th-desc { text-align: left; width: 42%; }
+.th-qty  { text-align: center; width: 12%; }
+.th-price { text-align: right; width: 22%; }
+.th-subt { text-align: right; width: 24%; }
+
+/* Filas de items */
+.item-row td {
+  padding-top: 0.4rem;
+  border-bottom: 1px dotted #f1f5f9;
+}
+
+.td-desc {
+  font-weight: 600;
+  color: var(--tk-text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.td-qty {
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  color: var(--tk-muted);
+}
+
+.td-price {
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  color: var(--tk-muted);
+}
+
+.td-subt {
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: var(--tk-text);
+}
+
+.item-note {
+  padding-left: 0.5rem !important;
+  font-style: italic;
+  color: var(--tk-muted);
+}
+
+.item-note i {
+  margin-right: 0.25rem;
+  font-size: 0.7rem;
+}
+
+/* ===== Sección de totales / IVA ===== */
+.totals-section {
+  padding: 0.25rem 0;
+}
+
+.totals-row {
+  font-size: 0.82rem;
+  margin: 0.3rem 0;
+  font-family: 'Courier New', monospace;
+}
+
+.totals-row span:first-child {
+  color: var(--tk-muted);
+}
+
+.totals-row span:last-child {
+  font-weight: 600;
+  color: var(--tk-text);
+}
+
+.subtotal-line {
+  font-weight: 700;
+  padding-top: 0.3rem;
+  border-top: 1px dotted #cbd5e1;
+  margin-top: 0.4rem;
+}
+
+.descuento-line span:last-child {
+  color: #dc2626 !important;
+  font-weight: 700;
+}
+
+/* ===== Total destacado ===== */
+.total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 0.65rem 0.35rem;
+  background: linear-gradient(90deg, transparent 0%, rgba(37, 99, 235, 0.08) 50%, transparent 100%);
+  border-radius: 6px;
+  margin: 0.35rem -0.35rem;
+}
+
+.total span:last-child {
+  color: var(--tk-brand-deep);
+  font-size: 1.25rem;
+}
+
+/* ===== Centrados ===== */
+.center { text-align: center; }
+
+/* Nota de impuesto */
+p.tax-note {
+  margin-bottom: 0.25rem !important;
+  font-size: 0.7rem !important;
+  color: var(--tk-muted) !important;
+  font-style: italic;
+}
+
+/* Mensaje de "Gracias por tu compra!" más vistoso */
+p.small.center:last-of-type {
+  margin-top: 0.5rem !important;
+  padding: 0.65rem 0.5rem;
+  background: rgba(37, 99, 235, 0.06);
+  border-radius: 8px;
+  color: var(--tk-brand-deep) !important;
+  font-weight: 600;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Print mode ===== */
+@media print {
+  body {
+    background: white;
+    padding: 0;
+    margin: 0;
+  }
+  .ticket {
+    width: 100%;
+    max-width: var(--tk-print-width);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0.5rem;
+  }
+  .ticket::before,
+  .ticket::after { display: none; }
+  .no-print { display: none !important; }
+  .total { background: none; }
+  hr.hr-total { border-top: 2px solid #000; }
+}
+
+/* ===== Mobile responsive ===== */
+@media (max-width: 380px) {
+  .ticket { width: 100%; }
+}
+

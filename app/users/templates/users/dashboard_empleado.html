@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'users/css/dashboard_admin.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# Hero Header del Empleado #}
+<section class="page-hero" aria-label="Cabecera del dashboard">
+    <h1><i class="fas fa-hand-paper"></i> ¡Hola, {{ user.get_full_name|default:user.username }}!</h1>
+    <p class="lead">{% now "l j \d\e F \d\e Y" %} · Listo para vender y gestionar pedidos</p>
+    <div class="hero-actions">
+        <a href="{% url 'orders:pos' %}" class="btn">
+            <i class="fas fa-cash-register"></i> Tomar pedido POS
+        </a>
+        <a href="{% url 'orders:order_list' %}" class="btn btn-ghost">
+            <i class="fas fa-receipt"></i> Mis pedidos
+        </a>
+    </div>
+</section>
+
+{# Métricas personales del Empleado #}
+<div class="row mb-4">
+    <div class="col-12 col-md-4 mb-3 mb-md-0">
+        <div class="db-stat-card stat-blue">
+            <div class="db-stat-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="db-stat-label">Mis Pedidos Hoy</div>
+            <div class="db-stat-value">{{ mis_pedidos_hoy }}</div>
+            <div class="db-stat-footer">
+                <i class="fas fa-user-check text-primary"></i> tomados por vos hoy
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4 mb-3 mb-md-0">
+        <div class="db-stat-card stat-green">
+            <div class="db-stat-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="db-stat-label">Ventas del Día</div>
+            <div class="db-stat-value">${{ ventas_hoy_total|floatformat:2 }}</div>
+            <div class="db-stat-footer">
+                <i class="fas fa-check-circle text-success"></i> en el local hoy
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="db-stat-card stat-amber">
+            <div class="db-stat-icon">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="db-stat-label">Pendientes por Cobrar</div>
+            <div class="db-stat-value">{{ pedidos_pendientes }}</div>
+            <div class="db-stat-footer">
+                <a href="{% url 'caja:index' %}" class="text-warning font-weight-bold text-decoration-none">
+                    <i class="fas fa-arrow-right"></i> Ir a Caja
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Atajos Rápidos #}
+<h2 class="h5 font-weight-bold text-dark mb-3">
+    <i class="fas fa-bolt text-warning mr-1"></i> Accesos Rápidos
+</h2>
+<div class="db-qa-grid mb-4">
+    <a href="{% url 'orders:pos' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+            <i class="fas fa-cash-register"></i>
+        </div>
+        <div class="db-qa-title">Tomar Pedido</div>
+        <p class="db-qa-sub">Ingresar un pedido al POS</p>
+    </a>
+
+    <a href="{% url 'caja:index' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <i class="fas fa-coins"></i>
+        </div>
+        <div class="db-qa-title">Módulo Caja</div>
+        <p class="db-qa-sub">Cobrar tickets de clientes</p>
+    </a>
+
+    <a href="{% url 'orders:order_list' %}" class="db-qa-tile">
+        <div class="db-qa-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="db-qa-title">Historial de Pedidos</div>
+        <p class="db-qa-sub">Revisar ventas e imprimir tickets</p>
+    </a>
+</div>
+
+{# Mis Últimas Ventas #}
+<div class="card modern-card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h3 class="h6 font-weight-bold text-dark m-0">
+            <i class="fas fa-history text-primary mr-1"></i> Mis Últimas Ventas
+        </h3>
+        <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table modern-table mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Número</th>
+                        <th>Estado</th>
+                        <th class="text-right">Total</th>
+                        <th>Hora</th>
+                        <th class="text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in mis_ultimos_pedidos %}
+                        <tr>
+                            <td class="align-middle"><a href="{{ p.get_absolute_url }}" class="font-weight-bold">{{ p.numero }}</a></td>
+                            <td class="align-middle">
+                                {% if p.estado == 'completado' %}
+                                    <span class="badge badge-success">Completado</span>
+                                {% elif p.estado == 'pendiente' %}
+                                    <span class="badge badge-warning">Pendiente</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Cancelado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right align-middle font-weight-bold text-dark">${{ p.total|floatformat:2 }}</td>
+                            <td class="align-middle"><small class="text-muted">{{ p.creado|date:"H:i" }}</small></td>
+                            <td class="text-right align-middle">
+                                <a href="{{ p.get_absolute_url }}" class="btn btn-sm btn-outline-secondary" title="Ver pedido">
+                                    <i class="fas fa-eye"></i> Detalle
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                Sin pedidos tomados hoy. <a href="{% url 'orders:pos' %}">Tomá tu primer pedido</a>.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
