@@ -90,13 +90,16 @@ class CajaTests(TestCase):
 
     # ---------- Detalle ----------
 
-    def test_detalle_solo_pedidos_pendientes(self):
+    def test_detalle_redirige_si_ya_no_esta_pendiente(self):
         pedido = self._pedido_pendiente()
         resp = self.client.get(reverse('caja:caja_detalle', args=[pedido.pk]))
         self.assertEqual(resp.status_code, 200)
         pedido.completar(usuario=self.emp)
         resp = self.client.get(reverse('caja:caja_detalle', args=[pedido.pk]))
-        self.assertEqual(resp.status_code, 404)
+        self.assertRedirects(resp, reverse('caja:index') + '?aviso=cobrado')
+        pedido.cancelar()
+        resp = self.client.get(reverse('caja:caja_detalle', args=[pedido.pk]))
+        self.assertRedirects(resp, reverse('caja:index') + '?aviso=cancelado')
 
     def test_ticket_visible_para_cualquier_empleado(self):
         otro = User.objects.create_user(username='otro', password='pass1234')
@@ -139,7 +142,17 @@ class CajaTests(TestCase):
         pedido = self._pedido_pendiente()
         pedido.completar(usuario=self.emp)
         resp = self._cobrar(pedido)
-        self.assertEqual(resp.status_code, 404)
+        self.assertRedirects(resp, reverse('caja:index') + '?aviso=cobrado')
+        pedido.refresh_from_db()
+        self.assertEqual(pedido.estado, Order.ESTADO_COMPLETADO)
+
+    def test_no_se_cobra_pedido_ya_cancelado(self):
+        pedido = self._pedido_pendiente()
+        pedido.cancelar()
+        resp = self._cobrar(pedido)
+        self.assertRedirects(resp, reverse('caja:index') + '?aviso=cancelado')
+        pedido.refresh_from_db()
+        self.assertEqual(pedido.estado, Order.ESTADO_CANCELADO)
 
     def test_mensaje_success_tras_cobrar(self):
         pedido = self._pedido_pendiente()

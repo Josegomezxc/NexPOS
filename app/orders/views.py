@@ -237,14 +237,14 @@ class OrderUpdateView(EmpleadoRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         pedido = self.get_object()
-        # Solo se editan pedidos pendientes (integridad contable)
+        # Solo se editan pedidos pendientes (integridad contable). Si otra
+        # sesión ya cobró/canceló, avisamos con popup en el detalle.
         if pedido.estado != Order.ESTADO_PENDIENTE:
-            messages.error(
-                request,
-                f'Solo se pueden editar pedidos pendientes ("{pedido.numero}" '
-                f'está {pedido.get_estado_display().lower()}).',
+            aviso = (
+                'cobrado' if pedido.estado == Order.ESTADO_COMPLETADO
+                else 'cancelado'
             )
-            return redirect(pedido)
+            return redirect(f"{pedido.get_absolute_url()}?aviso=editar_{aviso}")
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -278,12 +278,11 @@ def order_ticket(request, pk):
 def order_cancelar(request, pk):
     pedido = get_object_or_404(_pedidos_visibles(request.user), pk=pk)
     if pedido.estado != Order.ESTADO_PENDIENTE:
-        messages.error(
-            request,
-            f'Solo se pueden cancelar pedidos pendientes ("{pedido.numero}" '
-            f'está {pedido.get_estado_display().lower()}).',
+        aviso = (
+            'cobrado' if pedido.estado == Order.ESTADO_COMPLETADO
+            else 'cancelado'
         )
-        return redirect(pedido)
+        return redirect(f"{pedido.get_absolute_url()}?aviso=cancelar_{aviso}")
     pedido.cancelar()
     messages.warning(request, f'Pedido {pedido.numero} cancelado.')
     return redirect(pedido)

@@ -160,3 +160,8 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'orders/js/order_detail.js' %}?v=2"></script>
+<script>window.ORDER_DETAIL_ESTADO = '{{ pedido.estado|escapejs }}';</script>
+{% endblock %}

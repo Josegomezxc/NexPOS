@@ -64,4 +64,36 @@
       console.error('jQuery no está disponible — el modal no puede abrirse.');
     }
   }
+
+  /* =====================================================
+     Aviso por parámetro ?aviso= (pedido ya cobrado/cancelado).
+     Muestra el popup y limpia la URL para que no reaparezca.
+  ===================================================== */
+  (function mostrarAviso() {
+    const params = new URLSearchParams(window.location.search);
+    const aviso = params.get('aviso');
+    if (!aviso) return;
+
+    const opciones = {
+      cobrado: {
+        titulo: 'Pedido ya cobrado',
+        mensaje: 'Este pedido ya fue cobrado, la lista ya está actualizada.',
+        boton: 'Entendido',
+        clase: 'btn-primary',
+      },
+      cancelado: {
+        titulo: 'Pedido cancelado',
+        mensaje: 'Este pedido ya fue cancelado, la lista ya está actualizada.',
+        boton: 'Entendido',
+        clase: 'btn-warning',
+      },
+    }[aviso];
+    if (opciones) window.mostrarConfirmacion(opciones);
+
+    params.delete('aviso');
+    const resto = params.toString();
+    const nuevaUrl = window.location.pathname +
+      (resto ? '?' + resto : '') + window.location.hash;
+    window.history.replaceState({}, '', nuevaUrl);
+  })();
 })();

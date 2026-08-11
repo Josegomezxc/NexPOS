@@ -63,6 +63,7 @@ if not SECRET_KEY:
         )
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS', 'localhost,127.0.0.1', cast='list')
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS', 'http://localhost,http://127.0.0.1', cast='list')
 
 
 INSTALLED_APPS = [
@@ -81,6 +82,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Debe ir primero: WhiteNoise sirve los estáticos y corta la cadena
+    # de middleware, este corre al final sobre la respuesta y sobreescribe
+    # el Cache-Control que ponga WhiteNoise en desarrollo.
+    'doñaSara.middleware.StaticNoCacheMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

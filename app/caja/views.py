@@ -95,10 +95,21 @@ class CajaDetalleView(EmpleadoRequiredMixin, DetailView):
 
     def get_queryset(self):
         return (
-            Order.objects.filter(estado=Order.ESTADO_PENDIENTE)
-            .select_related('vendedor')
+            Order.objects.select_related('vendedor')
             .prefetch_related('items__producto')
         )
+
+    def get(self, request, *args, **kwargs):
+        # Si otra sesión ya cobró/canceló el pedido (página desactualizada),
+        # avisamos con popup y volvemos al listado actualizado.
+        self.object = self.get_object()
+        if self.object.estado != Order.ESTADO_PENDIENTE:
+            aviso = (
+                'cobrado' if self.object.estado == Order.ESTADO_COMPLETADO
+                else 'cancelado'
+            )
+            return redirect(f"{reverse('caja:index')}?aviso={aviso}")
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -124,11 +135,17 @@ def caja_ticket(request, pk):
 def caja_completar(request, pk):
     """Cobra el pedido, carga los datos del receptor y emite la factura."""
     pedido = get_object_or_404(
-        Order.objects.filter(estado=Order.ESTADO_PENDIENTE)
-        .select_related('vendedor')
+        Order.objects.select_related('vendedor')
         .prefetch_related('items__producto'),
         pk=pk,
     )
+    # Doble cobro: si otra sesión ya lo cobró, no procesamos nada.
+    if pedido.estado != Order.ESTADO_PENDIENTE:
+        aviso = (
+            'cobrado' if pedido.estado == Order.ESTADO_COMPLETADO
+            else 'cancelado'
+        )
+        return redirect(f"{reverse('caja:index')}?aviso={aviso}")
     data = request.POST
     errores = []
 
