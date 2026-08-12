@@ -29,29 +29,29 @@
 <div class="cat-card-grid mb-4">
     {% for c in categorias %}
     <div class="category-card"
-        data-id="{{ c.id }}"
-        data-nombre="{{ c.nombre }}"
-        data-descripcion="{{ c.descripcion|default:'' }}"
-        data-color="{{ c.color }}"
-        data-icono="{{ c.icono|default:'fas fa-tag' }}"
-        data-activa="{{ c.activa|yesno:'1,0' }}"
+        data-id="{{ c.id_cate }}"
+        data-nombre="{{ c.cate_nombre }}"
+        data-descripcion="{{ c.cate_descripcion|default:'' }}"
+        data-color="{{ c.cate_color }}"
+        data-icono="{{ c.cate_icono|default:'fas fa-tag' }}"
+        data-activa="{{ c.cate_active|yesno:'1,0' }}"
         data-count="{{ c.productos.count }}"
-        data-imagen="{% if c.imagen %}{{ c.imagen.url }}{% endif %}"
+        data-imagen="{% if c.cate_imagen %}{{ c.cate_imagen.url }}{% endif %}"
         data-edit-url="{% url 'products:category_update' c.pk %}"
         data-delete-url="{% url 'products:category_delete' c.pk %}"
         data-activate-url="{% url 'products:category_activate' c.pk %}"
-        tabindex="0" role="button" aria-label="Ver detalles de {{ c.nombre }}">
+        tabindex="0" role="button" aria-label="Ver detalles de {{ c.cate_nombre }}">
         
         <div class="category-card-header">
-            {% if c.imagen %}
-                <img src="{{ c.imagen.url }}" alt="{{ c.nombre }}" class="category-card-img">
+            {% if c.cate_imagen %}
+                <img src="{{ c.cate_imagen.url }}" alt="{{ c.cate_nombre }}" class="category-card-img">
             {% else %}
-                <div class="category-card-banner" style="background: linear-gradient(135deg, {{ c.color }} 0%, #1e293b 120%);">
-                    <i class="{{ c.icono|default:'fas fa-tag' }} banner-icon"></i>
+                <div class="category-card-banner" style="background: linear-gradient(135deg, {{ c.cate_color }} 0%, #1e293b 120%);">
+                    <i class="{{ c.cate_icono|default:'fas fa-tag' }} banner-icon"></i>
                 </div>
             {% endif %}
 
-            {% if c.activa %}
+            {% if c.cate_active %}
                 <span class="badge badge-success category-badge-status">Activa</span>
             {% else %}
                 <span class="badge badge-secondary category-badge-status">Inactiva</span>
@@ -63,9 +63,9 @@
         </div>
 
         <div class="category-card-body">
-            <h3 class="category-card-title">{{ c.nombre }}</h3>
+            <h3 class="category-card-title">{{ c.cate_nombre }}</h3>
             <p class="category-card-desc">
-                {{ c.descripcion|default:"Sin descripción adicional." }}
+                {{ c.cate_descripcion|default:"Sin descripción adicional." }}
             </p>
         </div>
 
@@ -73,11 +73,11 @@
             <a href="{% url 'products:category_update' c.pk %}" class="btn btn-sm btn-outline-primary mr-2" title="Editar">
                 <i class="fas fa-pencil-alt"></i> Editar
             </a>
-            {% if c.activa %}
+            {% if c.cate_active %}
             <a href="{% url 'products:category_delete' c.pk %}" class="btn btn-sm btn-danger btn-confirm"
                 title="Desactivar"
                 data-confirm-titulo="¿Desactivar categoría?"
-                data-confirm="¿Desactivar la categoría {{ c.nombre }}? No aparecerá en el menú y sus productos se desactivan."
+                data-confirm="¿Desactivar la categoría {{ c.cate_nombre }}? No aparecerá en el menú y sus productos se desactivan."
                 data-confirm-boton="Sí, desactivar"
                 data-confirm-clase="btn-danger"
                 data-confirm-icono="fas fa-toggle-off"

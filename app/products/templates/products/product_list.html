@@ -39,7 +39,7 @@
             </div>
             <select name="categoria" class="form-control filter-auto filter-select-cat" aria-label="Categoría">
                 <option value="">Todas las categorías</option>
-                {% for c in categorias %}<option value="{{ c.pk }}" {% if cat == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+                {% for c in categorias %}<option value="{{ c.pk }}" {% if cat == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.cate_nombre }}</option>{% endfor %}
             </select>
             <select name="estado" class="form-control filter-auto filter-select-estado" aria-label="Estado">
                 <option value="">Estado: todos</option>
@@ -60,58 +60,58 @@
     <div class="category-divider-header mt-4 mb-3">
         <div class="d-flex align-items-center justify-content-between">
             <h2 class="h5 font-weight-bold m-0 d-flex align-items-center text-dark">
-                <span class="category-divider-dot mr-2" style="background-color: {{ group.grouper.color }}; width: 14px; height: 14px; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px {{ group.grouper.color }}88;"></span>
-                <i class="{{ group.grouper.icono|default:'fas fa-tag' }} text-primary mr-2"></i>
-                {{ group.grouper.nombre }}
+                <span class="category-divider-dot mr-2" style="background-color: {{ group.grouper.cate_color }}; width: 14px; height: 14px; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px {{ group.grouper.cate_color }}88;"></span>
+                <i class="{{ group.grouper.cate_icono|default:'fas fa-tag' }} text-primary mr-2"></i>
+                {{ group.grouper.cate_nombre }}
                 <span class="badge badge-pill badge-secondary border ml-2 text-white font-weight-normal" style="font-size: 0.75rem;">
                     {{ group.list|length }} producto{% if group.list|length != 1 %}s{% endif %}
                 </span>
             </h2>
         </div>
-        <hr class="mt-2 mb-4" style="border-top: 2px solid {{ group.grouper.color }}; opacity: 0.7;">
+        <hr class="mt-2 mb-4" style="border-top: 2px solid {{ group.grouper.cate_color }}; opacity: 0.7;">
     </div>
 
     <div class="product-card-grid mb-5">
         {% for p in group.list %}
         <div class="product-card"
-            data-id="{{ p.id }}"
-            data-nombre="{{ p.nombre }}"
-            data-descripcion="{{ p.descripcion|default:'' }}"
-            data-precio="{{ p.precio|stringformat:'s' }}"
-            data-categoria="{{ p.categoria.nombre }}"
-            data-categoria-color="{{ p.categoria.color }}"
-            data-activo="{{ p.activo|yesno:'1,0' }}"
-            data-imagen="{% if p.imagen %}{{ p.imagen.url }}{% endif %}"
+            data-id="{{ p.id_prod }}"
+            data-nombre="{{ p.prod_nombre }}"
+            data-descripcion="{{ p.prod_descripcion|default:'' }}"
+            data-precio="{{ p.prod_precio|stringformat:'s' }}"
+            data-categoria="{{ p.prod_categoria.cate_nombre }}"
+            data-categoria-color="{{ p.prod_categoria.cate_color }}"
+            data-activo="{{ p.prod_active|yesno:'1,0' }}"
+            data-imagen="{% if p.prod_imagen %}{{ p.prod_imagen.url }}{% endif %}"
             data-edit-url="{% url 'products:product_update' p.pk %}"
             data-delete-url="{% url 'products:product_delete' p.pk %}"
             data-activate-url="{% url 'products:product_activate' p.pk %}"
-            tabindex="0" role="button" aria-label="Ver detalles de {{ p.nombre }}">
+            tabindex="0" role="button" aria-label="Ver detalles de {{ p.prod_nombre }}">
             
             <div class="product-card-header">
-                {% if p.imagen %}
-                    <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="product-card-img">
+                {% if p.prod_imagen %}
+                    <img src="{{ p.prod_imagen.url }}" alt="{{ p.prod_nombre }}" class="product-card-img">
                 {% else %}
-                    <div class="product-card-placeholder" data-color="{{ p.categoria.color }}">
-                        <i class="{{ p.categoria.icono|default:'fas fa-utensils' }}"></i>
+                    <div class="product-card-placeholder" data-color="{{ p.prod_categoria.cate_color }}">
+                        <i class="{{ p.prod_categoria.cate_icono|default:'fas fa-utensils' }}"></i>
                     </div>
                 {% endif %}
 
-                {% if p.activo %}
+                {% if p.prod_active %}
                     <span class="badge badge-success product-status-badge">Activo</span>
                 {% else %}
                     <span class="badge badge-secondary product-status-badge">Inactivo</span>
                 {% endif %}
 
-                <span class="product-price-badge">${{ p.precio|floatformat:2 }}</span>
+                <span class="product-price-badge">${{ p.prod_precio|floatformat:2 }}</span>
             </div>
 
             <div class="product-card-body">
-                <span class="badge product-cat-badge" data-color="{{ p.categoria.color }}">
-                    {{ p.categoria.nombre }}
+                <span class="badge product-cat-badge" data-color="{{ p.prod_categoria.cate_color }}">
+                    {{ p.prod_categoria.cate_nombre }}
                 </span>
-                <h3 class="product-card-title">{{ p.nombre }}</h3>
+                <h3 class="product-card-title">{{ p.prod_nombre }}</h3>
                 <p class="product-card-desc">
-                    {{ p.descripcion|default:"Sin descripción." }}
+                    {{ p.prod_descripcion|default:"Sin descripción." }}
                 </p>
             </div>
 

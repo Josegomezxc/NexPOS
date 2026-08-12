@@ -198,9 +198,9 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <div class="small text-gray-500">{{ p.creado|date:"d M Y · H:i" }}</div>
-                                    <span class="font-weight-bold">Pedido {{ p.numero }} pendiente</span>
-                                    <div class="small text-muted">Total: ${{ p.total|floatformat:2 }} · {{ p.vendedor.username }}</div>
+                                    <div class="small text-gray-500">{{ p.pedi_creado|date:"d M Y · H:i" }}</div>
+                                    <span class="font-weight-bold">Pedido {{ p.pedi_numero }} pendiente</span>
+                                    <div class="small text-muted">Total: ${{ p.pedi_total|floatformat:2 }} · {{ p.pedi_vendedor.username }}</div>
                                 </div>
                             </a>
                             {% empty %}

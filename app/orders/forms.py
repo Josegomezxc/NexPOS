@@ -35,47 +35,47 @@ class OrderEditForm(forms.ModelForm):
 
     class Meta:
         model = Order
-        fields = ['nombres', 'apellidos', 'razon_social', 'metodo_pago', 'descuento', 'notas']
+        fields = ['nombres', 'apellidos', 'razon_social', 'pedi_metodo_pago', 'pedi_descuento', 'pedi_notas']
         widgets = {
-            'metodo_pago': forms.Select(attrs={'class': 'form-control'}),
-            'descuento': forms.NumberInput(attrs={
+            'pedi_metodo_pago': forms.Select(attrs={'class': 'form-control'}),
+            'pedi_descuento': forms.NumberInput(attrs={
                 'class': 'form-control', 'step': '0.01', 'min': '0',
                 'data-validar': 'numero maxval',
                 'data-validar-max-int': str(MONTO_MAX_INT),
                 'data-validar-max-dec': '2',
             }),
-            'notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'pedi_notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance
         if instance and instance.pk:
-            if instance.nombres or instance.apellidos:
-                self.fields['nombres'].initial = instance.nombres
-                self.fields['apellidos'].initial = instance.apellidos
-            elif instance.tipo_identificacion == '04':
-                self.fields['razon_social'].initial = instance.cliente
-            elif instance.cliente:
+            if instance.pedi_nombres or instance.pedi_apellidos:
+                self.fields['nombres'].initial = instance.pedi_nombres
+                self.fields['apellidos'].initial = instance.pedi_apellidos
+            elif instance.pedi_tipo_identificacion == '04':
+                self.fields['razon_social'].initial = instance.pedi_cliente
+            elif instance.pedi_cliente:
                 # Datos viejos (un solo campo completo): la última palabra
                 # va a Apellidos y el resto a Nombres.
-                partes = instance.cliente.split()
+                partes = instance.pedi_cliente.split()
                 if len(partes) > 1:
                     self.fields['apellidos'].initial = partes.pop()
                     self.fields['nombres'].initial = ' '.join(partes)
                 else:
-                    self.fields['nombres'].initial = instance.cliente
-            self.fields['descuento'].widget.attrs['data-validar-max-val'] = \
-                f'{instance.subtotal:.2f}'
-        self.fields['descuento'].error_messages.update({
+                    self.fields['nombres'].initial = instance.pedi_cliente
+            self.fields['pedi_descuento'].widget.attrs['data-validar-max-val'] = \
+                f'{instance.pedi_subtotal:.2f}'
+        self.fields['pedi_descuento'].error_messages.update({
             'invalid': 'Ingresá un descuento válido.',
             'max_digits': 'El descuento no puede superar los 10 dígitos enteros.',
             'max_whole_digits': 'El descuento no puede superar los 10 dígitos enteros.',
             'max_decimal_places': 'El descuento no puede tener más de 2 decimales.',
         })
 
-    def clean_descuento(self):
-        descuento = self.cleaned_data.get('descuento') or Decimal('0')
+    def clean_pedi_descuento(self):
+        descuento = self.cleaned_data.get('pedi_descuento') or Decimal('0')
         errores = errores_monto(descuento, max_int=MONTO_MAX_INT)
         if errores:
             raise forms.ValidationError(errores[0])
@@ -92,15 +92,19 @@ class OrderEditForm(forms.ModelForm):
             cleaned['nombres'] = ''
             cleaned['apellidos'] = ''
             cleaned['razon_social'] = razon
-            self.instance.cliente = razon
+            self.instance.pedi_cliente = razon
+            self.instance.pedi_nombres = ''
+            self.instance.pedi_apellidos = ''
         else:
             cleaned['nombres'] = nombres
             cleaned['apellidos'] = apellidos
-            self.instance.cliente = f'{nombres} {apellidos}'.strip()[:120]
-        descuento = cleaned.get('descuento') or Decimal('0')
-        if self.instance and self.instance.pk and descuento > self.instance.subtotal:
+            self.instance.pedi_cliente = f'{nombres} {apellidos}'.strip()[:120]
+            self.instance.pedi_nombres = nombres
+            self.instance.pedi_apellidos = apellidos
+        descuento = cleaned.get('pedi_descuento') or Decimal('0')
+        if self.instance and self.instance.pk and descuento > self.instance.pedi_subtotal:
             raise forms.ValidationError(
                 f'El descuento (${descuento}) no puede ser mayor al subtotal '
-                f'(${self.instance.subtotal}).'
+                f'(${self.instance.pedi_subtotal}).'
             )
         return cleaned

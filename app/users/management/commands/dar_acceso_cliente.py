@@ -73,7 +73,7 @@ class Command(BaseCommand):
 
         user = User.objects.create_user(username=username, password=password)
         profile = user.profile
-        profile.rol = rol
+        profile.perf_rol = rol
         profile.save()
 
         self.stdout.write(self.style.SUCCESS(

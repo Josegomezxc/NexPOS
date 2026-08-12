@@ -203,8 +203,8 @@
                                         <span class="rank-badge rank-other">#{{ forloop.counter }}</span>
                                     {% endif %}
                                 </td>
-                                <td class="align-middle font-weight-bold text-dark">{{ p.producto__nombre }}</td>
-                                <td class="text-center align-middle font-weight-bold text-secondary">{{ p.cantidad|floatformat:0 }}</td>
+                                <td class="align-middle font-weight-bold text-dark">{{ p.deta_producto__prod_nombre }}</td>
+                                <td class="text-center align-middle font-weight-bold text-secondary">{{ p.deta_cantidad|floatformat:0 }}</td>
                                 <td class="text-right align-middle font-weight-bold text-warning">${{ p.ingresos|floatformat:2 }}</td>
                             </tr>
                             {% empty %}
@@ -246,20 +246,20 @@
                             {% for p in ultimos_pedidos %}
                             <tr>
                                 <td class="align-middle">
-                                    <a href="{{ p.get_absolute_url }}" class="font-weight-bold">{{ p.numero }}</a>
+                                    <a href="{{ p.get_absolute_url }}" class="font-weight-bold">{{ p.pedi_numero }}</a>
                                 </td>
-                                <td class="d-none d-md-table-cell align-middle">{{ p.vendedor.get_full_name|default:p.vendedor.username }}</td>
+                                <td class="d-none d-md-table-cell align-middle">{{ p.pedi_vendedor.get_full_name|default:p.pedi_vendedor.username }}</td>
                                 <td class="align-middle">
-                                    {% if p.estado == 'completado' %}
+                                    {% if p.pedi_active == 'completado' %}
                                         <span class="badge badge-success">Completado</span>
-                                    {% elif p.estado == 'pendiente' %}
+                                    {% elif p.pedi_active == 'pendiente' %}
                                         <span class="badge badge-warning">Pendiente</span>
                                     {% else %}
                                         <span class="badge badge-secondary">Cancelado</span>
                                     {% endif %}
                                 </td>
-                                <td class="text-right align-middle font-weight-bold text-dark">${{ p.total|floatformat:2 }}</td>
-                                <td class="d-none d-sm-table-cell align-middle"><small class="text-muted">{{ p.creado|date:"d/m H:i" }}</small></td>
+                                <td class="text-right align-middle font-weight-bold text-dark">${{ p.pedi_total|floatformat:2 }}</td>
+                                <td class="d-none d-sm-table-cell align-middle"><small class="text-muted">{{ p.pedi_creado|date:"d/m H:i" }}</small></td>
                             </tr>
                             {% empty %}
                             <tr>

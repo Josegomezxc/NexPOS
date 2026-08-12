@@ -102,10 +102,10 @@
                     </div>
                     <div class="form-row mb-3">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.rol.id_for_label }}" class="font-weight-bold">Rol en el Sistema <span class="text-danger">*</span></label>
-                            {{ form.rol }}
+                            <label for="{{ form.perf_rol.id_for_label }}" class="font-weight-bold">Rol en el Sistema <span class="text-danger">*</span></label>
+                            {{ form.perf_rol }}
                             <small class="form-text text-muted">Los administradores tienen acceso a reportes y configuraciones.</small>
-                            {% if form.rol.errors %}<small class="text-danger d-block mt-1">{{ form.rol.errors|join:", " }}</small>{% endif %}
+                            {% if form.perf_rol.errors %}<small class="text-danger d-block mt-1">{{ form.perf_rol.errors|join:", " }}</small>{% endif %}
                         </div>
 
                         {% if form.is_active %}

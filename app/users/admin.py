@@ -5,7 +5,7 @@ from .models import Profile
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'rol', 'telefono', 'activo', 'creado')
-    list_filter = ('rol', 'activo')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'documento')
-    list_select_related = ('user',)
+    list_display = ('perf_usuario', 'perf_rol', 'perf_telefono', 'perf_active', 'perf_creado')
+    list_filter = ('perf_rol', 'perf_active')
+    search_fields = ('perf_usuario__username', 'perf_usuario__first_name', 'perf_usuario__last_name', 'perf_documento')
+    list_select_related = ('perf_usuario',)

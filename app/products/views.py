@@ -25,12 +25,12 @@ class CategoryListView(AdminRequiredMixin, ListView):
     context_object_name = 'categorias'
 
     def get_queryset(self):
-        qs = Category.objects.all().order_by('orden', 'nombre')
+        qs = Category.objects.all().order_by('cate_orden', 'cate_nombre')
         estado = self.request.GET.get('estado', '').strip()
         if estado == 'activas':
-            qs = qs.filter(activa=True)
+            qs = qs.filter(cate_active=True)
         elif estado == 'inactivas':
-            qs = qs.filter(activa=False)
+            qs = qs.filter(cate_active=False)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -69,12 +69,12 @@ class CategoryDeleteView(AdminRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         cat = self.get_object()
-        cat.activa = False
-        cat.save(update_fields=['activa'])
-        cat.productos.update(activo=False)
+        cat.cate_active = False
+        cat.save(update_fields=['cate_active'])
+        cat.productos.update(prod_active=False)
         messages.success(
             request,
-            f'Categoría "{cat.nombre}" desactivada (junto a sus productos).',
+            f'Categoría "{cat.cate_nombre}" desactivada (junto a sus productos).',
         )
         return redirect('products:category_list')
 
@@ -84,9 +84,9 @@ class CategoryActivateView(AdminRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         cat = self.get_object()
-        cat.activa = True
-        cat.save(update_fields=['activa'])
-        messages.success(request, f'Categoría "{cat.nombre}" reactivada.')
+        cat.cate_active = True
+        cat.save(update_fields=['cate_active'])
+        messages.success(request, f'Categoría "{cat.cate_nombre}" reactivada.')
         return redirect('products:category_list')
 
     def get(self, request, *args, **kwargs):
@@ -101,25 +101,25 @@ class ProductListView(AdminRequiredMixin, ListView):
     context_object_name = 'productos'
 
     def get_queryset(self):
-        qs = Product.objects.select_related('categoria').order_by(
-            'categoria__orden', 'nombre'
+        qs = Product.objects.select_related('prod_categoria').order_by(
+            'prod_categoria__cate_orden', 'prod_nombre'
         )
         q = self.request.GET.get('q', '').strip()
         cat = self.request.GET.get('categoria', '').strip()
         estado = self.request.GET.get('estado', '').strip()
         if q:
-            qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
+            qs = qs.filter(Q(prod_nombre__icontains=q) | Q(prod_descripcion__icontains=q))
         if cat:
-            qs = qs.filter(categoria_id=cat)
+            qs = qs.filter(prod_categoria_id=cat)
         if estado == 'activos':
-            qs = qs.filter(activo=True)
+            qs = qs.filter(prod_active=True)
         elif estado == 'inactivos':
-            qs = qs.filter(activo=False)
+            qs = qs.filter(prod_active=False)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['categorias'] = Category.objects.filter(activa=True)
+        ctx['categorias'] = Category.objects.filter(cate_active=True)
         ctx['q'] = self.request.GET.get('q', '')
         ctx['cat'] = self.request.GET.get('categoria', '')
         ctx['estado'] = self.request.GET.get('estado', '')
@@ -134,7 +134,7 @@ class ProductCreateView(AdminRequiredMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, f'Producto "{self.object.nombre}" creado.')
+        messages.success(self.request, f'Producto "{self.object.prod_nombre}" creado.')
         return response
 
 
@@ -158,11 +158,11 @@ class ProductDeleteView(AdminRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         prod = self.get_object()
-        prod.activo = False
-        prod.save(update_fields=['activo'])
+        prod.prod_active = False
+        prod.save(update_fields=['prod_active'])
         messages.success(
             request,
-            f'Producto "{prod.nombre}" desactivado. No aparecerá en el POS pero '
+            f'Producto "{prod.prod_nombre}" desactivado. No aparecerá en el POS pero '
             'se conservan sus ventas históricas.',
         )
         return redirect('products:product_list')
@@ -173,9 +173,9 @@ class ProductActivateView(AdminRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         prod = self.get_object()
-        prod.activo = True
-        prod.save(update_fields=['activo'])
-        messages.success(request, f'Producto "{prod.nombre}" reactivado.')
+        prod.prod_active = True
+        prod.save(update_fields=['prod_active'])
+        messages.success(request, f'Producto "{prod.prod_nombre}" reactivado.')
         return redirect('products:product_list')
 
     def get(self, request, *args, **kwargs):

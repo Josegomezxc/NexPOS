@@ -35,7 +35,7 @@ IDENTIFICACION_CONSUMIDOR = '9999999999999'
 
 def _pedidos():
     return (
-        Order.objects.select_related('vendedor')
+        Order.objects.select_related('pedi_vendedor')
         .prefetch_related('items')
     )
 
@@ -55,30 +55,30 @@ class CajaIndexView(EmpleadoRequiredMixin, TemplateView):
 
         q = self.request.GET.get('q', '').strip()
         estado = self.request.GET.get('estado', '').strip()
-        all_pedidos = list(_pedidos().order_by('-creado'))
+        all_pedidos = list(_pedidos().order_by('-pedi_creado'))
 
-        pedidos_qs = _pedidos().order_by('-creado')
+        pedidos_qs = _pedidos().order_by('-pedi_creado')
         if q:
             pedidos_qs = pedidos_qs.filter(
-                Q(numero__icontains=q) |
-                Q(cliente__icontains=q) |
-                Q(nombres__icontains=q) |
-                Q(apellidos__icontains=q) |
-                Q(vendedor__username__icontains=q) |
-                Q(vendedor__first_name__icontains=q) |
-                Q(vendedor__last_name__icontains=q) |
-                Q(items__producto__nombre__icontains=q)
+                Q(pedi_numero__icontains=q) |
+                Q(pedi_cliente__icontains=q) |
+                Q(pedi_nombres__icontains=q) |
+                Q(pedi_apellidos__icontains=q) |
+                Q(pedi_vendedor__username__icontains=q) |
+                Q(pedi_vendedor__first_name__icontains=q) |
+                Q(pedi_vendedor__last_name__icontains=q) |
+                Q(items__deta_producto__prod_nombre__icontains=q)
             ).distinct()
 
         if estado in (Order.ESTADO_PENDIENTE, Order.ESTADO_COMPLETADO, Order.ESTADO_CANCELADO):
-            pedidos_qs = pedidos_qs.filter(estado=estado)
+            pedidos_qs = pedidos_qs.filter(pedi_active=estado)
 
         ctx['q'] = q
         ctx['estado'] = estado
         ctx['pedidos'] = pedidos_qs
-        ctx['n_pendientes'] = sum(1 for p in all_pedidos if p.estado == Order.ESTADO_PENDIENTE)
-        ctx['n_cobrados'] = sum(1 for p in all_pedidos if p.estado == Order.ESTADO_COMPLETADO)
-        ctx['n_cancelados'] = sum(1 for p in all_pedidos if p.estado == Order.ESTADO_CANCELADO)
+        ctx['n_pendientes'] = sum(1 for p in all_pedidos if p.pedi_active == Order.ESTADO_PENDIENTE)
+        ctx['n_cobrados'] = sum(1 for p in all_pedidos if p.pedi_active == Order.ESTADO_COMPLETADO)
+        ctx['n_cancelados'] = sum(1 for p in all_pedidos if p.pedi_active == Order.ESTADO_CANCELADO)
         return ctx
 
 
@@ -95,17 +95,17 @@ class CajaDetalleView(EmpleadoRequiredMixin, DetailView):
 
     def get_queryset(self):
         return (
-            Order.objects.select_related('vendedor')
-            .prefetch_related('items__producto')
+            Order.objects.select_related('pedi_vendedor')
+            .prefetch_related('items__deta_producto')
         )
 
     def get(self, request, *args, **kwargs):
         # Si otra sesión ya cobró/canceló el pedido (página desactualizada),
         # avisamos con popup y volvemos al listado actualizado.
         self.object = self.get_object()
-        if self.object.estado != Order.ESTADO_PENDIENTE:
+        if self.object.pedi_active != Order.ESTADO_PENDIENTE:
             aviso = (
-                'cobrado' if self.object.estado == Order.ESTADO_COMPLETADO
+                'cobrado' if self.object.pedi_active == Order.ESTADO_COMPLETADO
                 else 'cancelado'
             )
             return redirect(f"{reverse('caja:index')}?aviso={aviso}")
@@ -122,8 +122,8 @@ class CajaDetalleView(EmpleadoRequiredMixin, DetailView):
 def caja_ticket(request, pk):
     """Ticket imprimible del pedido (visible para cualquier empleado)."""
     pedido = get_object_or_404(
-        Order.objects.select_related('vendedor')
-        .prefetch_related('items__producto'),
+        Order.objects.select_related('pedi_vendedor')
+        .prefetch_related('items__deta_producto'),
         pk=pk,
     )
     iva_pct = int(round(float(pedido.iva_alicuota) * 100))
@@ -135,14 +135,14 @@ def caja_ticket(request, pk):
 def caja_completar(request, pk):
     """Cobra el pedido, carga los datos del receptor y emite la factura."""
     pedido = get_object_or_404(
-        Order.objects.select_related('vendedor')
-        .prefetch_related('items__producto'),
+        Order.objects.select_related('pedi_vendedor')
+        .prefetch_related('items__deta_producto'),
         pk=pk,
     )
     # Doble cobro: si otra sesión ya lo cobró, no procesamos nada.
-    if pedido.estado != Order.ESTADO_PENDIENTE:
+    if pedido.pedi_active != Order.ESTADO_PENDIENTE:
         aviso = (
-            'cobrado' if pedido.estado == Order.ESTADO_COMPLETADO
+            'cobrado' if pedido.pedi_active == Order.ESTADO_COMPLETADO
             else 'cancelado'
         )
         return redirect(f"{reverse('caja:index')}?aviso={aviso}")
@@ -173,10 +173,10 @@ def caja_completar(request, pk):
             errores.append('Ingresá un monto recibido válido.')
         else:
             errores.extend(errores_monto(recibido, max_int=MONTO_MAX_INT))
-            if recibido < pedido.total:
+            if recibido < pedido.pedi_total:
                 errores.append(
                     f'El monto recibido (${recibido}) no cubre el total '
-                    f'(${pedido.total}).'
+                    f'(${pedido.pedi_total}).'
                 )
 
     # Datos del receptor según el tipo de identificación
@@ -225,28 +225,28 @@ def caja_completar(request, pk):
         })
 
     with transaction.atomic():
-        pedido.cliente = cliente
-        pedido.nombres = nombres
-        pedido.apellidos = apellidos
-        pedido.tipo_identificacion = tipo
-        pedido.identificacion = identificacion
-        pedido.direccion = direccion
-        pedido.email = email
-        pedido.telefono = telefono
-        pedido.metodo_pago = metodo
+        pedido.pedi_cliente = cliente
+        pedido.pedi_nombres = nombres
+        pedido.pedi_apellidos = apellidos
+        pedido.pedi_tipo_identificacion = tipo
+        pedido.pedi_identificacion = identificacion
+        pedido.pedi_direccion = direccion
+        pedido.pedi_email = email
+        pedido.pedi_telefono = telefono
+        pedido.pedi_metodo_pago = metodo
         pedido.save(update_fields=[
-            'cliente', 'nombres', 'apellidos', 'tipo_identificacion',
-            'identificacion', 'direccion', 'email', 'telefono',
-            'metodo_pago', 'actualizado',
+            'pedi_cliente', 'pedi_nombres', 'pedi_apellidos', 'pedi_tipo_identificacion',
+            'pedi_identificacion', 'pedi_direccion', 'pedi_email', 'pedi_telefono',
+            'pedi_metodo_pago', 'pedi_actualizado',
         ])
         pedido.completar(usuario=request.user)
         _guardar_cliente(pedido)
 
     vuelto = None
     if metodo == Order.METODO_EFECTIVO and recibido is not None:
-        vuelto = (recibido - pedido.total).quantize(Decimal('0.01'))
+        vuelto = (recibido - pedido.pedi_total).quantize(Decimal('0.01'))
 
-    msg = f'Pedido {pedido.numero} cobrado con éxito.'
+    msg = f'Pedido {pedido.pedi_numero} cobrado con éxito.'
     if vuelto is not None:
         msg += f' Vuelto: ${vuelto}.'
     messages.success(request, msg)
@@ -260,25 +260,25 @@ def _guardar_cliente(pedido):
     vengan con datos: una dirección vacía en una venta no borra la
     dirección guardada en la ficha.
     """
-    if pedido.tipo_identificacion == '07' or not pedido.identificacion:
+    if pedido.pedi_tipo_identificacion == '07' or not pedido.pedi_identificacion:
         return
     defaults = {}
-    if pedido.cliente:
-        defaults['nombre'] = pedido.cliente
-    if pedido.nombres:
-        defaults['nombres'] = pedido.nombres
-    if pedido.apellidos:
-        defaults['apellidos'] = pedido.apellidos
-    if pedido.direccion:
-        defaults['direccion'] = pedido.direccion
-    if pedido.email:
-        defaults['email'] = pedido.email
-    if pedido.telefono:
-        defaults['telefono'] = pedido.telefono
+    if pedido.pedi_cliente:
+        defaults['clie_nombre'] = pedido.pedi_cliente
+    if pedido.pedi_nombres:
+        defaults['clie_nombres'] = pedido.pedi_nombres
+    if pedido.pedi_apellidos:
+        defaults['clie_apellidos'] = pedido.pedi_apellidos
+    if pedido.pedi_direccion:
+        defaults['clie_direccion'] = pedido.pedi_direccion
+    if pedido.pedi_email:
+        defaults['clie_email'] = pedido.pedi_email
+    if pedido.pedi_telefono:
+        defaults['clie_telefono'] = pedido.pedi_telefono
     if defaults:
         Cliente.objects.update_or_create(
-            tipo_identificacion=pedido.tipo_identificacion,
-            identificacion=pedido.identificacion,
+            clie_tipo_identificacion=pedido.pedi_tipo_identificacion,
+            clie_identificacion=pedido.pedi_identificacion,
             defaults=defaults,
         )
 
@@ -292,13 +292,13 @@ def clientes_buscar(request):
     tipea. El nombre se incluye solo para confirmar a quién corresponde.
     """
     q = (request.GET.get('q') or '').strip()
-    clientes = Cliente.objects.exclude(tipo_identificacion='07')
+    clientes = Cliente.objects.exclude(clie_tipo_identificacion='07')
     if q:
         clientes = (
-            clientes.filter(identificacion__icontains=q)
+            clientes.filter(clie_identificacion__icontains=q)
             .order_by(
-                Case(When(identificacion=q, then=0), default=1),
-                'identificacion',
+                Case(When(clie_identificacion=q, then=0), default=1),
+                'clie_identificacion',
             )[:15]
         )
     else:
@@ -306,15 +306,15 @@ def clientes_buscar(request):
     return JsonResponse({
         'clientes': [
             {
-                'id': c.pk,
-                'nombre': c.nombre,
-                'nombres': c.nombres or '',
-                'apellidos': c.apellidos or '',
-                'tipo_identificacion': c.tipo_identificacion,
-                'identificacion': c.identificacion,
-                'direccion': c.direccion,
-                'email': c.email or '',
-                'telefono': c.telefono,
+                'id_clie': c.id_clie,
+                'clie_nombre': c.clie_nombre,
+                'clie_nombres': c.clie_nombres or '',
+                'clie_apellidos': c.clie_apellidos or '',
+                'clie_tipo_identificacion': c.clie_tipo_identificacion,
+                'clie_identificacion': c.clie_identificacion,
+                'clie_direccion': c.clie_direccion,
+                'clie_email': c.clie_email or '',
+                'clie_telefono': c.clie_telefono,
             }
             for c in clientes
         ],

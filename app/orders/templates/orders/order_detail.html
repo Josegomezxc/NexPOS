@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Pedido {{ pedido.numero }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
+{% block title %}Pedido {{ pedido.pedi_numero }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">Pedidos</a></li>
-<li class="breadcrumb-item active">{{ pedido.numero }}</li>
+<li class="breadcrumb-item active">{{ pedido.pedi_numero }}</li>
 {% endblock %}
 
 {% block extra_head %}
@@ -14,13 +14,13 @@
 
 {% block content %}
 <section class="page-hero" aria-label="Cabecera del pedido">
-    <h1><i class="fas fa-receipt"></i> Pedido {{ pedido.numero }}</h1>
-    <p class="lead">Creado el {{ pedido.creado|date:"l j \d\e F \d\e Y · H:i" }} hrs por {{ pedido.vendedor.get_full_name|default:pedido.vendedor.username }}</p>
+    <h1><i class="fas fa-receipt"></i> Pedido {{ pedido.pedi_numero }}</h1>
+    <p class="lead">Creado el {{ pedido.pedi_creado|date:"l j \d\e F \d\e Y · H:i" }} hrs por {{ pedido.pedi_vendedor.get_full_name|default:pedido.pedi_vendedor.username }}</p>
     <div class="hero-actions">
         <a href="{% url 'orders:order_ticket' pedido.pk %}" target="_blank" rel="noopener" class="btn">
             <i class="fas fa-print"></i> Ver / Imprimir ticket
         </a>
-        {% if pedido.estado == 'pendiente' %}
+        {% if pedido.pedi_active == 'pendiente' %}
         <a href="{% url 'orders:order_update' pedido.pk %}" class="btn btn-ghost">
             <i class="fas fa-pencil-alt"></i> Editar
         </a>
@@ -58,31 +58,31 @@
                             {% for item in pedido.items.all %}
                             <tr>
                                 <td class="align-middle">
-                                    <strong class="d-block text-dark">{{ item.producto.nombre }}</strong>
-                                    {% if item.nota %}
-                                        <small class="d-block text-muted mt-1"><i class="fas fa-sticky-note"></i> {{ item.nota }}</small>
+                                    <strong class="d-block text-dark">{{ item.deta_producto.prod_nombre }}</strong>
+                                    {% if item.deta_nota %}
+                                        <small class="d-block text-muted mt-1"><i class="fas fa-sticky-note"></i> {{ item.deta_nota }}</small>
                                     {% endif %}
                                 </td>
-                                <td class="text-center align-middle font-weight-bold text-secondary">{{ item.cantidad|floatformat:0 }}</td>
-                                <td class="text-right align-middle text-muted">${{ item.precio_unitario|floatformat:2 }}</td>
-                                <td class="text-right align-middle font-weight-bold text-dark">${{ item.subtotal|floatformat:2 }}</td>
+                                <td class="text-center align-middle font-weight-bold text-secondary">{{ item.deta_cantidad|floatformat:0 }}</td>
+                                <td class="text-right align-middle text-muted">${{ item.deta_precio_unitario|floatformat:2 }}</td>
+                                <td class="text-right align-middle font-weight-bold text-dark">${{ item.deta_subtotal|floatformat:2 }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot class="bg-light">
                             <tr>
                                 <td colspan="3" class="text-right text-muted font-weight-bold">Subtotal</td>
-                                <td class="text-right font-weight-bold text-dark">${{ pedido.subtotal|floatformat:2 }}</td>
+                                <td class="text-right font-weight-bold text-dark">${{ pedido.pedi_subtotal|floatformat:2 }}</td>
                             </tr>
-                            {% if pedido.descuento %}
+                            {% if pedido.pedi_descuento %}
                             <tr>
                                 <td colspan="3" class="text-right text-muted font-weight-bold">Descuento aplicado</td>
-                                <td class="text-right font-weight-bold text-danger">-${{ pedido.descuento|floatformat:2 }}</td>
+                                <td class="text-right font-weight-bold text-danger">-${{ pedido.pedi_descuento|floatformat:2 }}</td>
                             </tr>
                             {% endif %}
                             <tr class="order-detail-total bg-white">
                                 <td colspan="3" class="text-right h5 font-weight-bold text-uppercase text-dark mb-0">Total a Pagar</td>
-                                <td class="text-right h4 font-weight-bold text-warning mb-0">${{ pedido.total|floatformat:2 }}</td>
+                                <td class="text-right h4 font-weight-bold text-warning mb-0">${{ pedido.pedi_total|floatformat:2 }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -102,9 +102,9 @@
             <div class="card-body">
                 <div class="mb-3">
                     <small class="text-uppercase text-muted font-weight-bold d-block mb-1">Estado de Pago</small>
-                    {% if pedido.estado == 'completado' %}
+                    {% if pedido.pedi_active == 'completado' %}
                         <span class="badge badge-success px-3 py-2 font-size-sm"><i class="fas fa-check-circle"></i> Completado / Cobrado</span>
-                    {% elif pedido.estado == 'pendiente' %}
+                    {% elif pedido.pedi_active == 'pendiente' %}
                         <span class="badge badge-warning px-3 py-2 font-size-sm"><i class="fas fa-clock"></i> Pendiente de cobro en caja</span>
                     {% else %}
                         <span class="badge badge-secondary px-3 py-2 font-size-sm"><i class="fas fa-times-circle"></i> Cancelado</span>
@@ -115,12 +115,12 @@
 
                 <div class="mb-3">
                     <small class="text-uppercase text-muted font-weight-bold d-block">Vendedor Atendiendo</small>
-                    <span class="font-weight-bold text-dark">{{ pedido.vendedor.get_full_name|default:pedido.vendedor.username }}</span>
+                    <span class="font-weight-bold text-dark">{{ pedido.pedi_vendedor.get_full_name|default:pedido.pedi_vendedor.username }}</span>
                 </div>
 
                 <div class="mb-3">
                     <small class="text-uppercase text-muted font-weight-bold d-block">Cliente Registrado</small>
-                    <span class="font-weight-bold text-dark">{{ pedido.cliente|default:"Consumidor Final" }}</span>
+                    <span class="font-weight-bold text-dark">{{ pedido.pedi_cliente|default:"Consumidor Final" }}</span>
                 </div>
 
                 <div class="mb-3">
@@ -128,17 +128,17 @@
                     <span class="font-weight-bold text-dark">{{ pedido.get_metodo_pago_texto }}</span>
                 </div>
 
-                {% if pedido.notas %}
+                {% if pedido.pedi_notas %}
                 <div class="mb-3">
                     <small class="text-uppercase text-muted font-weight-bold d-block">Notas del Pedido</small>
                     <div class="p-2 bg-light rounded text-muted small mt-1">
-                        <i class="fas fa-sticky-note mr-1"></i> {{ pedido.notas }}
+                        <i class="fas fa-sticky-note mr-1"></i> {{ pedido.pedi_notas }}
                     </div>
                 </div>
                 {% endif %}
             </div>
 
-            {% if pedido.estado == 'pendiente' %}
+            {% if pedido.pedi_active == 'pendiente' %}
             <div class="card-footer bg-white border-top-0 pt-0 pb-3 px-3">
                 <a href="{% url 'caja:caja_detalle' pedido.pk %}" class="btn btn-success btn-block font-weight-bold mb-2">
                     <i class="fas fa-cash-register mr-1"></i> Cobrar este pedido en Caja
@@ -147,7 +147,7 @@
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-danger btn-block btn-confirm"
                         data-confirm-titulo="¿Cancelar pedido?"
-                        data-confirm="¿Cancelar el pedido {{ pedido.numero }}? Ya no se podrá cobrar."
+                        data-confirm="¿Cancelar el pedido {{ pedido.pedi_numero }}? Ya no se podrá cobrar."
                         data-confirm-boton="Cancelar pedido"
                         data-confirm-clase="btn-danger"
                         data-confirm-icono="fas fa-times">
@@ -163,5 +163,5 @@
 
 {% block extra_scripts %}
 <script src="{% static 'orders/js/order_detail.js' %}?v=2"></script>
-<script>window.ORDER_DETAIL_ESTADO = '{{ pedido.estado|escapejs }}';</script>
+<script>window.ORDER_DETAIL_ESTADO = '{{ pedido.pedi_active|escapejs }}';</script>
 {% endblock %}

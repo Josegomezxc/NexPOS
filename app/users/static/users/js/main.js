@@ -62,12 +62,14 @@ $(function () {
             $backdrop.addClass('show');
             $('body').css('overflow', 'hidden');
         }
+        $('#wrapper').addClass('sidebar-collapsed');
     }
 
     function hideSidebar() {
         $sidebar.removeClass('toggled');
         $backdrop.removeClass('show');
         $('body').css('overflow', '');
+        $('#wrapper').removeClass('sidebar-collapsed');
     }
 
     function toggleSidebar() {
@@ -111,23 +113,34 @@ $(function () {
 
     // ===== Scroll-to-top button =====
     var $scrollTop = $('.scroll-to-top');
+    var $scrollContainer = $('#content-wrapper');
 
-    $(document).on('scroll', function () {
-        if ($(this).scrollTop() > 100) $scrollTop.fadeIn(150);
+    function scroller() {
+        // Desktop: el scroll vive dentro de #content-wrapper.
+        // Mobile/tablet: scroll de página normal.
+        return isMobileOrTablet() ? $('html, body') : $scrollContainer;
+    }
+
+    function verScroll() {
+        var scrolleoDoc = $(document).scrollTop() > 100;
+        var scrolleoCont = $scrollContainer.length && $scrollContainer.scrollTop() > 100;
+        if (scrolleoDoc || scrolleoCont) $scrollTop.fadeIn(150);
         else $scrollTop.fadeOut(150);
-    });
+    }
+
+    $(document).on('scroll', verScroll);
+    if ($scrollContainer.length) $scrollContainer.on('scroll', verScroll);
 
     $scrollTop.on('click', function (e) {
         e.preventDefault();
-        var href = $(this).attr('href') || '#page-top';
-        var $target = $(href).length ? $(href) : $('html, body');
-        $('html, body').stop().animate({
-            scrollTop: $target === $('html, body') ? 0 : $target.offset().top
-        }, 600);
+        scroller().stop().animate({ scrollTop: 0 }, 600);
     });
 
     // Estado inicial: ocultar el scroll-to-top si estamos arriba
-    if ($(document).scrollTop() <= 100) $scrollTop.hide();
+    if ($(document).scrollTop() <= 100 &&
+        (!$scrollContainer.length || $scrollContainer.scrollTop() <= 100)) {
+        $scrollTop.hide();
+    }
 });
 
 

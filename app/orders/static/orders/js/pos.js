@@ -18,13 +18,13 @@
   }
 
   const productById = new Map();
-  PRODUCTS.forEach(p => productById.set(String(p.id), {
-    id: String(p.id),
-    nombre: p.nombre,
-    precio: parseFloat(p.precio) || 0,
-    categoria_id: String(p.categoria_id),
-    descripcion: p.descripcion || '',
-    imagen_url: p.imagen_url || '',
+  PRODUCTS.forEach(p => productById.set(String(p.id_prod), {
+    id: String(p.id_prod),
+    nombre: p.prod_nombre,
+    precio: parseFloat(p.prod_precio) || 0,
+    categoria_id: String(p.prod_categoria_id),
+    descripcion: p.prod_descripcion || '',
+    imagen_url: p.prod_imagen_url || '',
   }));
 
   // Carrito en memoria

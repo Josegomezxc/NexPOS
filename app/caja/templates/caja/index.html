@@ -82,24 +82,24 @@
     {% for p in pedidos %}
     <div class="caja-card"
         data-id="{{ p.id }}"
-        data-numero="{{ p.numero }}"
-        data-total="{{ p.total|stringformat:'s' }}"
-        data-vendedor="{{ p.vendedor.get_full_name|default:p.vendedor.username }}"
-        data-estado="{{ p.estado }}"
+        data-numero="{{ p.pedi_numero }}"
+        data-total="{{ p.pedi_total|stringformat:'s' }}"
+        data-vendedor="{{ p.pedi_vendedor.get_full_name|default:p.pedi_vendedor.username }}"
+        data-estado="{{ p.pedi_active }}"
         data-metodo-display="{{ p.get_metodo_pago_texto }}"
         data-items-count="{{ p.items.count }}"
-        data-fecha="{{ p.creado|date:'d/m/Y H:i' }}"
+        data-fecha="{{ p.pedi_creado|date:'d/m/Y H:i' }}"
         data-detalle-url="{% url 'caja:caja_detalle' p.pk %}"
         data-ticket-url="{% url 'caja:caja_ticket' p.pk %}"
-        tabindex="0" role="button" aria-label="Ver detalles de {{ p.numero }}">
+        tabindex="0" role="button" aria-label="Ver detalles de {{ p.pedi_numero }}">
         
         <div class="caja-card-header">
             <span class="caja-card-number">
-                <i class="fas fa-ticket-alt text-warning mr-1"></i> {{ p.numero }}
+                <i class="fas fa-ticket-alt text-warning mr-1"></i> {{ p.pedi_numero }}
             </span>
-            {% if p.estado == 'pendiente' %}
+            {% if p.pedi_active == 'pendiente' %}
                 <span class="badge badge-warning">Pendiente</span>
-            {% elif p.estado == 'completado' %}
+            {% elif p.pedi_active == 'completado' %}
                 <span class="badge badge-success">Cobrado</span>
             {% else %}
                 <span class="badge badge-danger">Cancelado</span>
@@ -107,11 +107,11 @@
         </div>
 
         <div class="caja-card-body">
-            <div class="caja-card-total">${{ p.total|floatformat:2 }}</div>
+            <div class="caja-card-total">${{ p.pedi_total|floatformat:2 }}</div>
 
             <div class="caja-card-meta">
                 <i class="fas fa-user text-muted"></i>
-                <span>Vendedor: {{ p.vendedor.get_full_name|default:p.vendedor.username }}</span>
+                <span>Vendedor: {{ p.pedi_vendedor.get_full_name|default:p.pedi_vendedor.username }}</span>
             </div>
             <div class="caja-card-meta">
                 <i class="fas fa-box text-muted"></i>
@@ -119,16 +119,16 @@
             </div>
             <div class="caja-card-meta">
                 <i class="fas fa-clock text-muted"></i>
-                <span>{{ p.creado|date:"d/m/Y H:i" }}</span>
+                <span>{{ p.pedi_creado|date:"d/m/Y H:i" }}</span>
             </div>
         </div>
 
         <div class="caja-card-footer justify-content-center">
-            {% if p.estado == 'pendiente' %}
+            {% if p.pedi_active == 'pendiente' %}
                 <a href="{% url 'caja:caja_detalle' p.pk %}" class="btn btn-sm btn-success px-3">
                     <i class="fas fa-cash-register"></i> Cobrar
                 </a>
-            {% elif p.estado == 'completado' %}
+            {% elif p.pedi_active == 'completado' %}
                 <a href="{% url 'caja:caja_ticket' p.pk %}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary px-3">
                     <i class="fas fa-print"></i> Ticket
                 </a>

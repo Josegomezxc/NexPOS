@@ -30,7 +30,7 @@ def _pedidos_visibles(user):
     qs = Order.objects.all()
     profile = getattr(user, 'profile', None)
     if not (user.is_superuser or (profile and profile.es_admin)):
-        qs = qs.filter(vendedor=user)
+        qs = qs.filter(pedi_vendedor=user)
     return qs
 
 
@@ -43,23 +43,23 @@ class POSView(EmpleadoRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        categorias = Category.objects.filter(activa=True).order_by('orden', 'nombre')
+        categorias = Category.objects.filter(cate_active=True).order_by('cate_orden', 'cate_nombre')
         productos = (
-            Product.objects.filter(activo=True)
-            .select_related('categoria')
-            .order_by('categoria__orden', 'nombre')
+            Product.objects.filter(prod_active=True)
+            .select_related('prod_categoria')
+            .order_by('prod_categoria__cate_orden', 'prod_nombre')
         )
         ctx['categorias'] = categorias
         ctx['productos'] = productos
         ctx['productos_json'] = [
             {
-                'id': p.id,
-                'nombre': p.nombre,
-                'precio': str(p.precio),
-                'categoria_id': p.categoria_id,
-                'categoria_color': p.categoria.color,
-                'descripcion': p.descripcion or '',
-                'imagen_url': p.imagen.url if p.imagen else '',
+                'id_prod': p.id_prod,
+                'prod_nombre': p.prod_nombre,
+                'prod_precio': str(p.prod_precio),
+                'prod_categoria_id': p.prod_categoria_id,
+                'prod_categoria_color': p.prod_categoria.cate_color,
+                'prod_descripcion': p.prod_descripcion or '',
+                'prod_imagen_url': p.prod_imagen.url if p.prod_imagen else '',
             }
             for p in productos
         ]
@@ -115,20 +115,20 @@ def pos_crear_pedido(request):
             return JsonResponse({'ok': False, 'error': f'Ítem #{idx} inválido.'}, status=400)
         producto_id = it.get('producto_id')
         try:
-            producto = Product.objects.get(pk=producto_id, activo=True)
+            producto = Product.objects.get(pk=producto_id, prod_active=True)
         except (Product.DoesNotExist, ValueError, TypeError):
             return JsonResponse({'ok': False, 'error': f'Producto no encontrado en el ítem #{idx}.'}, status=400)
         try:
             cantidad = Decimal(str(it.get('cantidad', 1)))
         except (InvalidOperation, TypeError):
-            return JsonResponse({'ok': False, 'error': f'Cantidad inválida en "{producto.nombre}".'}, status=400)
+            return JsonResponse({'ok': False, 'error': f'Cantidad inválida en "{producto.prod_nombre}".'}, status=400)
         if cantidad <= 0:
-            return JsonResponse({'ok': False, 'error': f'La cantidad de "{producto.nombre}" debe ser mayor a cero.'}, status=400)
+            return JsonResponse({'ok': False, 'error': f'La cantidad de "{producto.prod_nombre}" debe ser mayor a cero.'}, status=400)
         if cantidad > MAX_CANTIDAD_POS:
-            return JsonResponse({'ok': False, 'error': f'La cantidad de "{producto.nombre}" supera el máximo ({MAX_CANTIDAD_POS}).'}, status=400)
+            return JsonResponse({'ok': False, 'error': f'La cantidad de "{producto.prod_nombre}" supera el máximo ({MAX_CANTIDAD_POS}).'}, status=400)
         nota = str(it.get('nota', ''))[:200]
         items_validos.append((producto, cantidad, nota))
-        subtotal_esperado += (producto.precio * cantidad)
+        subtotal_esperado += (producto.prod_precio * cantidad)
 
     # El descuento no puede superar el subtotal (mismo criterio que la edición)
     if descuento > subtotal_esperado:
@@ -139,26 +139,26 @@ def pos_crear_pedido(request):
 
     with transaction.atomic():
         pedido = Order.objects.create(
-            vendedor=request.user,
-            descuento=descuento,
-            notas=notas,
+            pedi_vendedor=request.user,
+            pedi_descuento=descuento,
+            pedi_notas=notas,
         )
         for producto, cantidad, nota in items_validos:
             OrderItem.objects.create(
-                pedido=pedido,
-                producto=producto,
-                cantidad=cantidad,
-                precio_unitario=producto.precio,
-                nota=nota,
+                deta_pedido=pedido,
+                deta_producto=producto,
+                deta_cantidad=cantidad,
+                deta_precio_unitario=producto.prod_precio,
+                deta_nota=nota,
             )
         pedido.recalcular_totales()
 
     return JsonResponse({
         'ok': True,
-        'pedido_id': pedido.pk,
-        'numero': pedido.numero,
-        'total': str(pedido.total.quantize(Decimal('0.01'))),
-        'ticket_url': f'/pedidos/{pedido.pk}/ticket/?auto=1',
+        'pedido_id': pedido.id_pedi,
+        'numero': pedido.pedi_numero,
+        'total': str(pedido.pedi_total.quantize(Decimal('0.01'))),
+        'ticket_url': f'/pedidos/{pedido.id_pedi}/ticket/?auto=1',
     })
 
 
@@ -180,7 +180,7 @@ class OrderListView(EmpleadoRequiredMixin, ListView):
     context_object_name = 'pedidos'
 
     def get_queryset(self):
-        qs = _pedidos_visibles(self.request.user).select_related('vendedor').order_by('-creado')
+        qs = _pedidos_visibles(self.request.user).select_related('pedi_vendedor').order_by('-pedi_creado')
 
         q = self.request.GET.get('q', '').strip()
         estado = self.request.GET.get('estado', '').strip()
@@ -188,19 +188,19 @@ class OrderListView(EmpleadoRequiredMixin, ListView):
         hasta = self.request.GET.get('hasta', '').strip()
         if q:
             qs = qs.filter(
-                Q(numero__icontains=q) |
-                Q(cliente__icontains=q) |
-                Q(notas__icontains=q)
+                Q(pedi_numero__icontains=q) |
+                Q(pedi_cliente__icontains=q) |
+                Q(pedi_notas__icontains=q)
             )
         if estado:
-            qs = qs.filter(estado=estado)
+            qs = qs.filter(pedi_active=estado)
         # Fechas inválidas se ignoran (no rompen la búsqueda con 500)
         fecha_desde = _parsear_fecha(desde)
         fecha_hasta = _parsear_fecha(hasta)
         if fecha_desde:
-            qs = qs.filter(creado__date__gte=fecha_desde)
+            qs = qs.filter(pedi_creado__date__gte=fecha_desde)
         if fecha_hasta:
-            qs = qs.filter(creado__date__lte=fecha_hasta)
+            qs = qs.filter(pedi_creado__date__lte=fecha_hasta)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -223,8 +223,8 @@ class OrderDetailView(EmpleadoRequiredMixin, DetailView):
     def get_queryset(self):
         # Empleados solo ven sus propios pedidos
         return _pedidos_visibles(self.request.user).select_related(
-            'vendedor'
-        ).prefetch_related('items__producto')
+            'pedi_vendedor'
+        ).prefetch_related('items__deta_producto')
 
 
 class OrderUpdateView(EmpleadoRequiredMixin, UpdateView):
@@ -239,9 +239,9 @@ class OrderUpdateView(EmpleadoRequiredMixin, UpdateView):
         pedido = self.get_object()
         # Solo se editan pedidos pendientes (integridad contable). Si otra
         # sesión ya cobró/canceló, avisamos con popup en el detalle.
-        if pedido.estado != Order.ESTADO_PENDIENTE:
+        if pedido.pedi_active != Order.ESTADO_PENDIENTE:
             aviso = (
-                'cobrado' if pedido.estado == Order.ESTADO_COMPLETADO
+                'cobrado' if pedido.pedi_active == Order.ESTADO_COMPLETADO
                 else 'cancelado'
             )
             return redirect(f"{pedido.get_absolute_url()}?aviso=editar_{aviso}")
@@ -261,8 +261,8 @@ class OrderUpdateView(EmpleadoRequiredMixin, UpdateView):
 def order_ticket(request, pk):
     """Vista del ticket imprimible (solo usuarios autenticados, cada uno sus pedidos)."""
     pedido = get_object_or_404(
-        _pedidos_visibles(request.user).select_related('vendedor')
-        .prefetch_related('items__producto'),
+        _pedidos_visibles(request.user).select_related('pedi_vendedor')
+        .prefetch_related('items__deta_producto'),
         pk=pk,
     )
     iva_pct = int(round(float(pedido.iva_alicuota) * 100))
@@ -277,12 +277,12 @@ def order_ticket(request, pk):
 @require_POST
 def order_cancelar(request, pk):
     pedido = get_object_or_404(_pedidos_visibles(request.user), pk=pk)
-    if pedido.estado != Order.ESTADO_PENDIENTE:
+    if pedido.pedi_active != Order.ESTADO_PENDIENTE:
         aviso = (
-            'cobrado' if pedido.estado == Order.ESTADO_COMPLETADO
+            'cobrado' if pedido.pedi_active == Order.ESTADO_COMPLETADO
             else 'cancelado'
         )
         return redirect(f"{pedido.get_absolute_url()}?aviso=cancelar_{aviso}")
     pedido.cancelar()
-    messages.warning(request, f'Pedido {pedido.numero} cancelado.')
+    messages.warning(request, f'Pedido {pedido.pedi_numero} cancelado.')
     return redirect(pedido)

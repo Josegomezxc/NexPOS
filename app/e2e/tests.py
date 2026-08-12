@@ -73,8 +73,8 @@ class BaseE2ETestCase(StaticLiveServerTestCase):
     def crear_usuario(self, username, password='clave123', es_admin=False):
         user = User.objects.create_user(username=username, password=password)
         # La señal post_save de User ya crea el Profile; solo actualizamos el rol.
-        user.profile.rol = Profile.ROL_ADMIN if es_admin else Profile.ROL_EMPLEADO
-        user.profile.save(update_fields=['rol'])
+        user.profile.perf_rol = Profile.ROL_ADMIN if es_admin else Profile.ROL_EMPLEADO
+        user.profile.save(update_fields=['perf_rol'])
         return user
 
     def login(self, username, password='clave123'):
@@ -105,11 +105,11 @@ class POSFlujoE2ETestCase(BaseE2ETestCase):
     def setUp(self):
         super().setUp()
         self.empleado = self.crear_usuario('empleado_pos')
-        self.cat = Category.objects.create(nombre='Hamburguesas')
+        self.cat = Category.objects.create(cate_nombre='Hamburguesas')
         self.producto = Product.objects.create(
-            nombre='Hamburguesa Clásica',
-            categoria=self.cat,
-            precio=Decimal('8.50'),
+            prod_nombre='Hamburguesa Clásica',
+            prod_categoria=self.cat,
+            prod_precio=Decimal('8.50'),
         )
 
     def test_agregar_producto_y_vaciar_carrito_con_popup(self):
@@ -144,21 +144,21 @@ class CajaCobroE2ETestCase(BaseE2ETestCase):
     def setUp(self):
         super().setUp()
         self.admin = self.crear_usuario('admin_caja', es_admin=True)
-        self.cat = Category.objects.create(nombre='Bebidas')
+        self.cat = Category.objects.create(cate_nombre='Bebidas')
         self.producto = Product.objects.create(
-            nombre='Coca Cola', categoria=self.cat, precio=Decimal('1.50'),
+            prod_nombre='Coca Cola', prod_categoria=self.cat, prod_precio=Decimal('1.50'),
         )
         self.pedido = Order.objects.create(
-            vendedor=self.admin,
-            subtotal=Decimal('1.50'),
-            total=Decimal('1.50'),
-            estado=Order.ESTADO_PENDIENTE,
+            pedi_vendedor=self.admin,
+            pedi_subtotal=Decimal('1.50'),
+            pedi_total=Decimal('1.50'),
+            pedi_active=Order.ESTADO_PENDIENTE,
         )
         OrderItem.objects.create(
-            pedido=self.pedido,
-            producto=self.producto,
-            cantidad=1,
-            precio_unitario=Decimal('1.50'),
+            deta_pedido=self.pedido,
+            deta_producto=self.producto,
+            deta_cantidad=1,
+            deta_precio_unitario=Decimal('1.50'),
         )
         self.pedido.refresh_from_db()
 
@@ -167,7 +167,7 @@ class CajaCobroE2ETestCase(BaseE2ETestCase):
 
         # Buscar el pedido por número de ticket en caja
         self.page.goto(f'{self.live_server_url}{reverse("caja:index")}')
-        self.page.fill('input[placeholder*="Buscar por número de ticket"]', self.pedido.numero)
+        self.page.fill('input[placeholder*="Buscar por número de ticket"]', self.pedido.pedi_numero)
         self.page.press('input[placeholder*="Buscar por número de ticket"]', 'Enter')
         # Con un solo resultado, el buscador redirige directo al detalle.
         expect(self.page).to_have_url(re.compile(r'/caja/\d+/$'))
@@ -191,31 +191,32 @@ class CajaCobroE2ETestCase(BaseE2ETestCase):
         expect(self.page.locator('.alert-success')).to_contain_text('Cobrado')
 
         self.pedido.refresh_from_db()
-        self.assertEqual(self.pedido.estado, Order.ESTADO_COMPLETADO)
-        self.assertEqual(self.pedido.cliente, 'CONSUMIDOR FINAL')
+        self.assertEqual(self.pedido.pedi_active, Order.ESTADO_COMPLETADO)
+        self.assertEqual(self.pedido.pedi_cliente, 'CONSUMIDOR FINAL')
 
 
 class MenuGestionE2ETestCase(BaseE2ETestCase):
     def setUp(self):
         super().setUp()
         self.admin = self.crear_usuario('admin_menu', es_admin=True)
-        self.cat = Category.objects.create(nombre='Papas')
+        self.cat = Category.objects.create(cate_nombre='Papas')
 
     def test_crear_y_desactivar_producto_con_popup(self):
         self.login('admin_menu')
 
         # Crear producto
         self.page.goto(f'{self.live_server_url}{reverse("products:product_create")}')
-        self.page.fill('#id_nombre', 'Papas Fritas Grandes')
-        self.page.select_option('#id_categoria', str(self.cat.pk))
-        self.page.fill('#id_precio', '3.25')
+        self.page.fill('#id_prod_nombre', 'Papas Fritas Grandes')
+        self.page.select_option('#id_prod_categoria', str(self.cat.pk))
+        self.page.fill('#id_prod_precio', '3.25')
         self.page.click('button:has-text("Guardar producto")')
         self.page.wait_for_load_state('load')
         expect(self.page).to_have_url(re.compile(r'/productos/$'))
-        expect(self.page.locator('.product-table')).to_contain_text('Papas Fritas Grandes')
+        # El nombre se guarda normalizado a sentence case
+        expect(self.page.locator('.product-table')).to_contain_text('Papas fritas grandes')
 
         # Desactivar desde el modal con el popup de confirmación
-        row = self.page.locator('.product-row', has_text='Papas Fritas Grandes')
+        row = self.page.locator('.product-row', has_text='Papas fritas grandes')
         row.click()
         expect(self.page.locator('#productModal')).to_be_visible()
         self.page.click('#modal-btn-desactivar')
@@ -224,8 +225,8 @@ class MenuGestionE2ETestCase(BaseE2ETestCase):
         self.page.wait_for_load_state('load')
 
         expect(self.page).to_have_url(re.compile(r'/productos/$'))
-        producto = Product.objects.get(nombre='Papas Fritas Grandes')
-        self.assertFalse(producto.activo)
+        producto = Product.objects.get(prod_nombre='Papas fritas grandes')
+        self.assertFalse(producto.prod_active)
         expect(
-            self.page.locator('.product-row', has_text='Papas Fritas Grandes')
+            self.page.locator('.product-row', has_text='Papas fritas grandes')
         ).to_contain_text('Inactivo')

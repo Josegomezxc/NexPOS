@@ -62,7 +62,7 @@ class Command(BaseCommand):
             is_superuser=True,
         )
         profile = user.profile
-        profile.rol = Profile.ROL_SUPEROWNER
+        profile.perf_rol = Profile.ROL_SUPEROWNER
         profile.save()
 
         self.stdout.write(self.style.SUCCESS(

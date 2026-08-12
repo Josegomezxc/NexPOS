@@ -17,44 +17,47 @@ class Profile(models.Model):
         (ROL_EMPLEADO, 'Empleado'),
     )
 
-    user = models.OneToOneField(
+    id_perf = models.AutoField(primary_key=True)
+    perf_usuario = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name='profile',
         verbose_name='Usuario',
     )
-    rol = models.CharField(
+    perf_rol = models.CharField(
         'Rol',
         max_length=20,
         choices=ROL_CHOICES,
         default=ROL_EMPLEADO,
         db_index=True,
     )
-    telefono = models.CharField('Teléfono', max_length=30, blank=True)
-    documento = models.CharField('Documento', max_length=30, blank=True)
-    activo = models.BooleanField('Activo', default=True)
-    creado = models.DateTimeField('Creado', auto_now_add=True)
-    actualizado = models.DateTimeField('Actualizado', auto_now=True)
+    perf_telefono = models.CharField('Teléfono', max_length=30, blank=True)
+    perf_documento = models.CharField('Documento', max_length=30, blank=True)
+    perf_active = models.BooleanField('Activo', default=True)
+    perf_creado = models.DateTimeField('Creado', auto_now_add=True)
+    perf_actualizado = models.DateTimeField('Actualizado', auto_now=True)
 
     class Meta:
         verbose_name = 'Perfil'
         verbose_name_plural = 'Perfiles'
-        ordering = ['user__username']
+        ordering = ['perf_usuario__username']
+        db_table = 'tbl_perfiles'
 
     def __str__(self):
-        return f'{self.user.get_full_name() or self.user.username} ({self.get_rol_display()})'
+        return (f'{self.perf_usuario.get_full_name() or self.perf_usuario.username} '
+                f'({self.get_perf_rol_display()})')
 
     @property
     def es_superowner(self):
-        return self.rol == self.ROL_SUPEROWNER
+        return self.perf_rol == self.ROL_SUPEROWNER
 
     @property
     def es_admin(self):
-        return self.rol in (self.ROL_ADMIN, self.ROL_SUPEROWNER) or self.user.is_superuser
+        return self.perf_rol in (self.ROL_ADMIN, self.ROL_SUPEROWNER) or self.perf_usuario.is_superuser
 
     @property
     def es_empleado(self):
-        return self.rol == self.ROL_EMPLEADO
+        return self.perf_rol == self.ROL_EMPLEADO
 
     def get_absolute_url(self):
         return reverse('users:dashboard')

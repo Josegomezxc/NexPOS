@@ -63,25 +63,25 @@
     {% for p in pedidos %}
     <div class="order-card"
         data-id="{{ p.id }}"
-        data-numero="{{ p.numero }}"
-        data-total="{{ p.total|stringformat:'s' }}"
-        data-vendedor="{{ p.vendedor.get_full_name|default:p.vendedor.username }}"
-        data-cliente="{{ p.cliente|default:'Consumidor Final' }}"
-        data-estado="{{ p.estado }}"
+        data-numero="{{ p.pedi_numero }}"
+        data-total="{{ p.pedi_total|stringformat:'s' }}"
+        data-vendedor="{{ p.pedi_vendedor.get_full_name|default:p.pedi_vendedor.username }}"
+        data-cliente="{{ p.pedi_cliente|default:'Consumidor Final' }}"
+        data-estado="{{ p.pedi_active }}"
         data-metodo-display="{{ p.get_metodo_pago_texto }}"
         data-items-count="{{ p.items.count }}"
-        data-fecha="{{ p.creado|date:'d/m/Y H:i' }}"
+        data-fecha="{{ p.pedi_creado|date:'d/m/Y H:i' }}"
         data-detail-url="{{ p.get_absolute_url }}"
         data-ticket-url="{% url 'orders:order_ticket' p.pk %}"
-        tabindex="0" role="button" aria-label="Ver detalles de {{ p.numero }}">
+        tabindex="0" role="button" aria-label="Ver detalles de {{ p.pedi_numero }}">
         
         <div class="order-card-header">
             <span class="order-card-number">
-                <i class="fas fa-receipt text-warning mr-1"></i> {{ p.numero }}
+                <i class="fas fa-receipt text-warning mr-1"></i> {{ p.pedi_numero }}
             </span>
-            {% if p.estado == 'completado' %}
+            {% if p.pedi_active == 'completado' %}
                 <span class="badge badge-success">Completado</span>
-            {% elif p.estado == 'pendiente' %}
+            {% elif p.pedi_active == 'pendiente' %}
                 <span class="badge badge-warning">Pendiente</span>
             {% else %}
                 <span class="badge badge-secondary">Cancelado</span>
@@ -89,15 +89,15 @@
         </div>
 
         <div class="order-card-body">
-            <div class="order-card-total">${{ p.total|floatformat:2 }}</div>
+            <div class="order-card-total">${{ p.pedi_total|floatformat:2 }}</div>
             
             <div class="order-card-meta">
                 <i class="fas fa-user text-muted"></i>
-                <span>Vendedor: {{ p.vendedor.get_full_name|default:p.vendedor.username }}</span>
+                <span>Vendedor: {{ p.pedi_vendedor.get_full_name|default:p.pedi_vendedor.username }}</span>
             </div>
             <div class="order-card-meta">
                 <i class="fas fa-user-tag text-muted"></i>
-                <span>Cliente: {{ p.cliente|default:"Consumidor Final" }}</span>
+                <span>Cliente: {{ p.pedi_cliente|default:"Consumidor Final" }}</span>
             </div>
             <div class="order-card-meta">
                 <i class="fas fa-box text-muted"></i>
@@ -105,7 +105,7 @@
             </div>
             <div class="order-card-meta">
                 <i class="fas fa-clock text-muted"></i>
-                <span>{{ p.creado|date:"d/m/Y H:i" }}</span>
+                <span>{{ p.pedi_creado|date:"d/m/Y H:i" }}</span>
             </div>
         </div>
 

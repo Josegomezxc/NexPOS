@@ -108,7 +108,7 @@ class EmpleadoCreateForm(forms.Form):
             email=self.cleaned_data.get('email', ''),
         )
         profile = user.profile
-        profile.rol = rol
+        profile.perf_rol = rol
         profile.save()
         return user
 
@@ -159,7 +159,7 @@ class EmpleadoEditForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             profile = getattr(self.instance, 'profile', None)
             if profile:
-                self.fields['rol'].initial = profile.rol
+                self.fields['rol'].initial = profile.perf_rol
 
     def clean_username(self):
         username = self.cleaned_data['username'].strip()
@@ -188,8 +188,8 @@ class EmpleadoEditForm(forms.ModelForm):
             user.set_password(password)
             user.save()
         profile = user.profile
-        profile.rol = self.cleaned_data['rol']
-        profile.activo = user.is_active
+        profile.perf_rol = self.cleaned_data['rol']
+        profile.perf_active = user.is_active
         if commit:
             profile.save()
         return user

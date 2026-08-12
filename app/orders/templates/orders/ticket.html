@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ticket {{ pedido.numero }}</title>
+    <title>Ticket {{ pedido.pedi_numero }}</title>
     <link rel="stylesheet" href="{% static 'sb-admin-2/vendor/fontawesome-free/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'orders/css/ticket.css' %}">
 </head>
@@ -19,24 +19,24 @@
 
         <!-- Datos del ticket -->
         <div class="row small">
-            <span>Ticket:</span> <strong>{{ pedido.numero }}</strong>
+            <span>Ticket:</span> <strong>{{ pedido.pedi_numero }}</strong>
         </div>
         <div class="row small">
-            <span>Fecha:</span> <span>{{ pedido.creado|date:"d/m/Y H:i" }}</span>
+            <span>Fecha:</span> <span>{{ pedido.pedi_creado|date:"d/m/Y H:i" }}</span>
         </div>
         <div class="row small">
-            <span>Vendedor:</span> <span>{{ pedido.vendedor.username }}</span>
+            <span>Vendedor:</span> <span>{{ pedido.pedi_vendedor.username }}</span>
         </div>
-        {% if pedido.cliente %}
-        <div class="row small"><span>Cliente:</span> <span>{{ pedido.cliente }}</span></div>
+        {% if pedido.pedi_cliente %}
+        <div class="row small"><span>Cliente:</span> <span>{{ pedido.pedi_cliente }}</span></div>
         {% endif %}
-        {% if pedido.estado == 'pendiente' %}
+        {% if pedido.pedi_active == 'pendiente' %}
         <div class="row small highlight">
             <span>Pago:</span> <strong>Pagar en Caja</strong>
         </div>
         {% else %}
         <div class="row small">
-            <span>Método de pago:</span> <span>{{ pedido.get_metodo_pago_display }}</span>
+            <span>Método de pago:</span> <span>{{ pedido.get_pedi_metodo_pago_display }}</span>
         </div>
         {% endif %}
         <hr>
@@ -54,13 +54,13 @@
             <tbody>
             {% for item in pedido.items.all %}
                 <tr class="item-row">
-                    <td class="td-desc">{{ item.producto.nombre }}</td>
-                    <td class="td-qty">{{ item.cantidad|floatformat:0 }}</td>
-                    <td class="td-price">${{ item.precio_unitario|floatformat:2 }}</td>
-                    <td class="td-subt">${{ item.subtotal|floatformat:2 }}</td>
+                    <td class="td-desc">{{ item.deta_producto.prod_nombre }}</td>
+                    <td class="td-qty">{{ item.deta_cantidad|floatformat:0 }}</td>
+                    <td class="td-price">${{ item.deta_precio_unitario|floatformat:2 }}</td>
+                    <td class="td-subt">${{ item.deta_subtotal|floatformat:2 }}</td>
                 </tr>
-                {% if item.nota %}
-                <tr><td colspan="4" class="small item-note"><i class="fas fa-comment-dots"></i> {{ item.nota }}</td></tr>
+                {% if item.deta_nota %}
+                <tr><td colspan="4" class="small item-note"><i class="fas fa-comment-dots"></i> {{ item.deta_nota }}</td></tr>
                 {% endif %}
             {% endfor %}
             </tbody>
@@ -80,12 +80,12 @@
             </div>
             <div class="row totals-row subtotal-line">
                 <span>Subtotal:</span>
-                <span>${{ pedido.subtotal|floatformat:2 }}</span>
+                <span>${{ pedido.pedi_subtotal|floatformat:2 }}</span>
             </div>
-            {% if pedido.descuento %}
+            {% if pedido.pedi_descuento %}
             <div class="row totals-row descuento-line">
                 <span>Descuento:</span>
-                <span>-${{ pedido.descuento|floatformat:2 }}</span>
+                <span>-${{ pedido.pedi_descuento|floatformat:2 }}</span>
             </div>
             {% endif %}
         </div>
@@ -94,15 +94,15 @@
 
         <div class="row total">
             <span>TOTAL:</span>
-            <span>${{ pedido.total|floatformat:2 }}</span>
+            <span>${{ pedido.pedi_total|floatformat:2 }}</span>
         </div>
 
-        {% if pedido.notas %}
+        {% if pedido.pedi_notas %}
         <hr>
-        <p class="small"><i class="fas fa-sticky-note" aria-hidden="true"></i> {{ pedido.notas }}</p>
+        <p class="small"><i class="fas fa-sticky-note" aria-hidden="true"></i> {{ pedido.pedi_notas }}</p>
         {% endif %}
 
-        {% if pedido.estado == 'pendiente' %}
+        {% if pedido.pedi_active == 'pendiente' %}
         <hr>
         <p class="small center highlight"><strong>Presentá este ticket en Caja para pagar.</strong></p>
         {% else %}

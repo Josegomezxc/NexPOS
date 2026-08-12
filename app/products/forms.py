@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 
 from app.orders.validators import errores_monto, errores_nombre, normalizar_nombre
 
-from .models import Category, Product
+from .models import Category, Product, normalizar_nombre_catalogo
 
 
 IMAGEN_EXTENSIONES = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
@@ -12,47 +12,65 @@ IMAGEN_MAX_MB = 5
 PRECIO_MAX_INT = 8  # max_digits=10 en el modelo -> 8 enteros + 2 decimales
 
 
+def _validar_nombre_unico(modelo, campo, nombre, pk_actual, tipo):
+    """Rechaza nombres duplicados sin importar mayúsculas/minúsculas o
+    espacios (el guardado normaliza, pero el mensaje debe ser amigable)."""
+    nombre = ' '.join((nombre or '').split()).capitalize()
+    qs = modelo.objects.filter(**{f'{campo}__iexact': nombre})
+    if pk_actual:
+        qs = qs.exclude(pk=pk_actual)
+    if qs.exists():
+        raise forms.ValidationError(
+            f'Ya existe un {tipo} llamado "{nombre}".',
+        )
+    return nombre
+
+
 class CategoryForm(forms.ModelForm):
     """Formulario de categorías.
 
-    El campo `orden` NO se pide: se asigna automáticamente en
+    El campo `cate_orden` NO se pide: se asigna automáticamente en
     Category.save() (siguiente posición disponible).
     """
 
     class Meta:
         model = Category
-        fields = ['nombre', 'descripcion', 'icono', 'color', 'imagen', 'activa']
+        fields = ['cate_nombre', 'cate_descripcion', 'cate_icono', 'cate_color', 'cate_imagen', 'cate_active']
         widgets = {
-            'nombre': forms.TextInput(attrs={
+            'cate_nombre': forms.TextInput(attrs={
                 'class': 'form-control', 'maxlength': '80', 'data-validar': 'requerido',
             }),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'icono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'fas fa-hamburger', 'maxlength': '60'}),
-            'color': forms.TextInput(attrs={'class': 'form-control form-control-color', 'type': 'color'}),
-            'imagen': forms.ClearableFileInput(attrs={
+            'cate_descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'cate_icono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'fas fa-hamburger', 'maxlength': '60'}),
+            'cate_color': forms.TextInput(attrs={'class': 'form-control form-control-color', 'type': 'color'}),
+            'cate_imagen': forms.ClearableFileInput(attrs={
                 'class': 'form-control', 'accept': 'image/*',
                 'data-validar': 'imagen',
                 'data-validar-imagen-ext': 'jpg,jpeg,png,webp,gif',
                 'data-validar-imagen-max': '5',
             }),
-            'activa': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'cate_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Los nombres con solo espacios deben llegar a clean_nombre
+        # Los nombres con solo espacios deben llegar a clean_cate_nombre
         # (que los rechaza con el mensaje personalizado).
-        self.fields['nombre'].strip = False
-        self.fields['nombre'].error_messages['required'] = 'El nombre es obligatorio.'
+        self.fields['cate_nombre'].strip = False
+        self.fields['cate_nombre'].error_messages['required'] = 'El nombre es obligatorio.'
 
-    def clean_nombre(self):
-        errores = errores_nombre(self.cleaned_data.get('nombre'))
+    def clean_cate_nombre(self):
+        nombre = self.cleaned_data.get('cate_nombre')
+        errores = errores_nombre(nombre)
         if errores:
             raise forms.ValidationError(errores[0])
-        return normalizar_nombre(self.cleaned_data.get('nombre'))
+        pk = self.instance.pk if self.instance else None
+        return _validar_nombre_unico(
+            Category, 'cate_nombre', normalizar_nombre(nombre), pk, 'categoría',
+        )
 
-    def clean_imagen(self):
-        imagen = self.cleaned_data.get('imagen')
+    def clean_cate_imagen(self):
+        imagen = self.cleaned_data.get('cate_imagen')
         if not imagen:
             return imagen
         nombre = (imagen.name or '').lower()
@@ -69,53 +87,57 @@ class CategoryForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['nombre', 'descripcion', 'categoria', 'precio', 'imagen', 'activo']
+        fields = ['prod_nombre', 'prod_descripcion', 'prod_categoria', 'prod_precio', 'prod_imagen', 'prod_active']
         widgets = {
-            'nombre': forms.TextInput(attrs={
+            'prod_nombre': forms.TextInput(attrs={
                 'class': 'form-control', 'maxlength': '140', 'data-validar': 'requerido',
             }),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3,
-                                                 'placeholder': 'Ej: Incluye carne, queso cheddar laminado, lechuga, tomate...'}),
-            'categoria': forms.Select(attrs={'class': 'form-control'}),
-            'precio': forms.NumberInput(attrs={
+            'prod_descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3,
+                                                      'placeholder': 'Ej: Incluye carne, queso cheddar laminado, lechuga, tomate...'}),
+            'prod_categoria': forms.Select(attrs={'class': 'form-control'}),
+            'prod_precio': forms.NumberInput(attrs={
                 'class': 'form-control', 'step': '0.01', 'min': '0',
                 'data-validar': 'numero',
                 'data-validar-max-int': str(PRECIO_MAX_INT),
                 'data-validar-max-dec': '2',
             }),
-            'imagen': forms.ClearableFileInput(attrs={
+            'prod_imagen': forms.ClearableFileInput(attrs={
                 'class': 'form-control', 'accept': 'image/*',
                 'data-validar': 'imagen',
                 'data-validar-imagen-ext': 'jpg,jpeg,png,webp,gif',
                 'data-validar-imagen-max': '5',
             }),
-            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'prod_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['precio'].error_messages.update({
+        self.fields['prod_precio'].error_messages.update({
             'invalid': 'Ingresá un precio válido.',
             'max_digits': 'El precio no puede superar los 8 dígitos enteros.',
             'max_whole_digits': 'El precio no puede superar los 8 dígitos enteros.',
             'max_decimal_places': 'El precio no puede tener más de 2 decimales.',
         })
 
-    def clean_nombre(self):
-        errores = errores_nombre(self.cleaned_data.get('nombre'))
+    def clean_prod_nombre(self):
+        nombre = self.cleaned_data.get('prod_nombre')
+        errores = errores_nombre(nombre)
         if errores:
             raise forms.ValidationError(errores[0])
-        return normalizar_nombre(self.cleaned_data.get('nombre'))
+        pk = self.instance.pk if self.instance else None
+        return _validar_nombre_unico(
+            Product, 'prod_nombre', normalizar_nombre(nombre), pk, 'producto',
+        )
 
-    def clean_precio(self):
-        precio = self.cleaned_data.get('precio')
+    def clean_prod_precio(self):
+        precio = self.cleaned_data.get('prod_precio')
         errores = errores_monto(precio, max_int=PRECIO_MAX_INT)
         if errores:
             raise forms.ValidationError(errores[0])
         return precio
 
-    def clean_imagen(self):
-        imagen = self.cleaned_data.get('imagen')
+    def clean_prod_imagen(self):
+        imagen = self.cleaned_data.get('prod_imagen')
         if not imagen:
             return imagen
         nombre = (imagen.name or '').lower()

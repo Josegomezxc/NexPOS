@@ -5,14 +5,14 @@
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'products:product_list' %}">Menú</a></li>
-<li class="breadcrumb-item active">{% if object %}Editar {{ object.nombre }}{% else %}Nuevo Producto{% endif %}</li>
+<li class="breadcrumb-item active">{% if object %}Editar {{ object.prod_nombre }}{% else %}Nuevo Producto{% endif %}</li>
 {% endblock %}
 
 {% block content %}
 <section class="page-hero" aria-label="Cabecera del formulario de producto">
     <h1>
         <i class="fas fa-utensils"></i>
-        {% if object %}Editar Producto: {{ object.nombre }}{% else %}Nuevo Producto{% endif %}
+        {% if object %}Editar Producto: {{ object.prod_nombre }}{% else %}Nuevo Producto{% endif %}
     </h1>
     <p class="lead">{% if object %}Actualizá la información, precio o foto del producto.{% else %}Cargá un nuevo producto gastronómico para venderlo en el punto de venta (POS).{% endif %}</p>
     <div class="hero-actions">
@@ -46,15 +46,15 @@
                     </div>
                     <div class="form-row mb-3">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.nombre.id_for_label }}" class="font-weight-bold">Nombre del Producto <span class="text-danger">*</span></label>
-                            {{ form.nombre }}
-                            {% if form.nombre.errors %}<small class="text-danger d-block mt-1">{{ form.nombre.errors|join:", " }}</small>{% endif %}
+                            <label for="{{ form.prod_nombre.id_for_label }}" class="font-weight-bold">Nombre del Producto <span class="text-danger">*</span></label>
+                            {{ form.prod_nombre }}
+                            {% if form.prod_nombre.errors %}<small class="text-danger d-block mt-1">{{ form.prod_nombre.errors|join:", " }}</small>{% endif %}
                         </div>
 
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.categoria.id_for_label }}" class="font-weight-bold">Categoría <span class="text-danger">*</span></label>
-                            {{ form.categoria }}
-                            {% if form.categoria.errors %}<small class="text-danger d-block mt-1">{{ form.categoria.errors|join:", " }}</small>{% endif %}
+                            <label for="{{ form.prod_categoria.id_for_label }}" class="font-weight-bold">Categoría <span class="text-danger">*</span></label>
+                            {{ form.prod_categoria }}
+                            {% if form.prod_categoria.errors %}<small class="text-danger d-block mt-1">{{ form.prod_categoria.errors|join:", " }}</small>{% endif %}
                         </div>
                     </div>
 
@@ -64,22 +64,16 @@
                     </div>
                     <div class="form-row mb-3">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.precio.id_for_label }}" class="font-weight-bold">Precio ($) <span class="text-danger">*</span></label>
+                            <label for="{{ form.prod_precio.id_for_label }}" class="font-weight-bold">Precio ($) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text bg-light font-weight-bold">$</span>
                                 </div>
-                                {{ form.precio }}
+                                {{ form.prod_precio }}
                             </div>
-                            {% if form.precio.errors %}<small class="text-danger d-block mt-1">{{ form.precio.errors|join:", " }}</small>{% endif %}
+                            {% if form.prod_precio.errors %}<small class="text-danger d-block mt-1">{{ form.prod_precio.errors|join:", " }}</small>{% endif %}
                         </div>
 
-                        <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.orden.id_for_label }}" class="font-weight-bold">Orden en Menú</label>
-                            {{ form.orden }}
-                            <small class="form-text text-muted">Posición relativa en la tarjeta del POS.</small>
-                            {% if form.orden.errors %}<small class="text-danger d-block mt-1">{{ form.orden.errors|join:", " }}</small>{% endif %}
-                        </div>
                     </div>
 
                     {# Sección 3: Descripción e Imagen #}
@@ -87,30 +81,30 @@
                         <i class="fas fa-align-left"></i> 3. Descripción y Fotografía
                     </div>
                     <div class="form-group mb-4">
-                        <label for="{{ form.descripcion.id_for_label }}" class="font-weight-bold">Descripción / Ingredientes</label>
-                        {{ form.descripcion }}
+                        <label for="{{ form.prod_descripcion.id_for_label }}" class="font-weight-bold">Descripción / Ingredientes</label>
+                        {{ form.prod_descripcion }}
                         <small class="form-text text-muted">Breve detalle para el cajero o cliente (ej: carne 150g, cheddar, papas).</small>
-                        {% if form.descripcion.errors %}<small class="text-danger d-block mt-1">{{ form.descripcion.errors|join:", " }}</small>{% endif %}
+                        {% if form.prod_descripcion.errors %}<small class="text-danger d-block mt-1">{{ form.prod_descripcion.errors|join:", " }}</small>{% endif %}
                     </div>
 
                     <div class="form-group mb-4">
-                        <label for="{{ form.imagen.id_for_label }}" class="font-weight-bold d-block">Foto del Producto</label>
+                        <label for="{{ form.prod_imagen.id_for_label }}" class="font-weight-bold d-block">Foto del Producto</label>
                         
-                        {% if object and object.imagen %}
+                        {% if object and object.prod_imagen %}
                         <div class="mb-3 p-3 bg-light rounded border d-flex align-items-center gap-3" style="max-width: 450px;">
-                            <img src="{{ object.imagen.url }}" alt="{{ object.nombre }}" class="rounded shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
+                            <img src="{{ object.prod_imagen.url }}" alt="{{ object.prod_nombre }}" class="rounded shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
                             <div>
-                                <strong class="d-block text-dark">{{ object.nombre }}</strong>
+                                <strong class="d-block text-dark">{{ object.prod_nombre }}</strong>
                                 <small class="text-success font-weight-bold"><i class="fas fa-check-circle"></i> Imagen actual guardada</small>
                             </div>
                         </div>
                         {% endif %}
 
                         <div class="p-3 bg-light rounded border">
-                            {{ form.imagen }}
+                            {{ form.prod_imagen }}
                             <small class="form-text text-muted mt-2">Formatos aceptados: JPG, PNG, WEBP. Tamaño máximo 5 MB.</small>
                         </div>
-                        {% if form.imagen.errors %}<small class="text-danger d-block mt-1">{{ form.imagen.errors|join:", " }}</small>{% endif %}
+                        {% if form.prod_imagen.errors %}<small class="text-danger d-block mt-1">{{ form.prod_imagen.errors|join:", " }}</small>{% endif %}
                     </div>
 
                     {# Sección 4: Disponibilidad del Producto (Checkbox Moderno) #}
@@ -118,14 +112,14 @@
                         <i class="fas fa-toggle-on"></i> 4. Estado de Venta
                     </div>
                     <div class="form-group mb-2">
-                        <label class="custom-switch-card" for="{{ form.activo.id_for_label }}">
-                            {{ form.activo }}
+                        <label class="custom-switch-card" for="{{ form.prod_active.id_for_label }}">
+                            {{ form.prod_active }}
                             <div>
                                 <span class="switch-label d-block">Producto Activo (Disponible para Venta en POS)</span>
                                 <small class="text-muted d-block mt-1">Si está desactivado, el producto no aparecerá en el menú del punto de venta.</small>
                             </div>
                         </label>
-                        {% if form.activo.errors %}<small class="text-danger d-block mt-1">{{ form.activo.errors|join:", " }}</small>{% endif %}
+                        {% if form.prod_active.errors %}<small class="text-danger d-block mt-1">{{ form.prod_active.errors|join:", " }}</small>{% endif %}
                     </div>
 
                 </div>

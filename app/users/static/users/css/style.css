@@ -288,13 +288,16 @@ body {
 
 @media (min-width: 992px) {
 
-  /* Sidebar normal */
+  /* Sidebar normal — fija a la izquierda, siempre visible */
   #accordionSidebar.sidebar {
-    position: static;
-    transform: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1045;
     width: var(--sidebar-width, 14rem) !important;
-    height: auto;
-    overflow: visible;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
@@ -303,6 +306,21 @@ body {
     transform: none;
     width: var(--sidebar-width-collapsed, 5.5rem) !important;
     overflow: hidden;
+  }
+
+  /* Contenido: scroll propio (topbar queda quieto arriba, solo scrollea el main) */
+  #content-wrapper {
+    width: auto;
+    margin-left: var(--sidebar-width, 14rem);
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Contenido cuando la sidebar está colapsada */
+  #wrapper.sidebar-collapsed #content-wrapper {
+    margin-left: var(--sidebar-width-collapsed, 5.5rem);
   }
 
   /* Ocultar textos cuando colapsada */
@@ -535,7 +553,8 @@ body {
 ============================================================ */
 
 .topbar {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 1040 !important;
   background: rgba(255, 255, 255, 0.98) !important;
   backdrop-filter: blur(10px);

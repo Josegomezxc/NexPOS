@@ -5,14 +5,14 @@
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'products:category_list' %}">Categorías</a></li>
-<li class="breadcrumb-item active">{% if object %}Editar {{ object.nombre }}{% else %}Nueva Categoría{% endif %}</li>
+<li class="breadcrumb-item active">{% if object %}Editar {{ object.cate_nombre }}{% else %}Nueva Categoría{% endif %}</li>
 {% endblock %}
 
 {% block content %}
 <section class="page-hero" aria-label="Cabecera del formulario de categoría">
     <h1>
         <i class="fas fa-tags"></i>
-        {% if object %}Editar Categoría: {{ object.nombre }}{% else %}Nueva Categoría{% endif %}
+        {% if object %}Editar Categoría: {{ object.cate_nombre }}{% else %}Nueva Categoría{% endif %}
     </h1>
     <p class="lead">{% if object %}Modificá los datos, ícono, color o imagen de la categoría.{% else %}Definí una nueva categoría gastronómica para organizar los productos del menú.{% endif %}</p>
     <div class="hero-actions">
@@ -46,17 +46,11 @@
                     </div>
                     <div class="form-row mb-3">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.nombre.id_for_label }}" class="font-weight-bold">Nombre de la Categoría <span class="text-danger">*</span></label>
-                            {{ form.nombre }}
-                            {% if form.nombre.errors %}<small class="text-danger d-block mt-1">{{ form.nombre.errors|join:", " }}</small>{% endif %}
+                            <label for="{{ form.cate_nombre.id_for_label }}" class="font-weight-bold">Nombre de la Categoría <span class="text-danger">*</span></label>
+                            {{ form.cate_nombre }}
+                            {% if form.cate_nombre.errors %}<small class="text-danger d-block mt-1">{{ form.cate_nombre.errors|join:", " }}</small>{% endif %}
                         </div>
 
-                        <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.orden.id_for_label }}" class="font-weight-bold">Orden de Despliegue</label>
-                            {{ form.orden }}
-                            <small class="form-text text-muted">Posición en la pestaña del menú táctil POS.</small>
-                            {% if form.orden.errors %}<small class="text-danger d-block mt-1">{{ form.orden.errors|join:", " }}</small>{% endif %}
-                        </div>
                     </div>
 
                     {# Sección 2: Estilo e Identificación Visual #}
@@ -65,24 +59,24 @@
                     </div>
                     <div class="form-row mb-3">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.icono.id_for_label }}" class="font-weight-bold">Ícono FontAwesome</label>
+                            <label for="{{ form.cate_icono.id_for_label }}" class="font-weight-bold">Ícono FontAwesome</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text bg-light"><i class="{{ form.icono.value|default:'fas fa-tag' }}"></i></span>
+                                    <span class="input-group-text bg-light"><i class="{{ form.cate_icono.value|default:'fas fa-tag' }}"></i></span>
                                 </div>
-                                {{ form.icono }}
+                                {{ form.cate_icono }}
                             </div>
                             <small class="form-text text-muted">Ej: <code>fas fa-hamburger</code>, <code>fas fa-fire</code>, <code>fas fa-wine-bottle</code></small>
-                            {% if form.icono.errors %}<small class="text-danger d-block mt-1">{{ form.icono.errors|join:", " }}</small>{% endif %}
+                            {% if form.cate_icono.errors %}<small class="text-danger d-block mt-1">{{ form.cate_icono.errors|join:", " }}</small>{% endif %}
                         </div>
 
                         <div class="form-group col-md-6 mb-3">
-                            <label for="{{ form.color.id_for_label }}" class="font-weight-bold">Color Identificador</label>
+                            <label for="{{ form.cate_color.id_for_label }}" class="font-weight-bold">Color Identificador</label>
                             <div class="d-flex align-items-center gap-2">
-                                {{ form.color }}
+                                {{ form.cate_color }}
                                 <small class="text-muted">Color distintivo en gráficos y pestañas.</small>
                             </div>
-                            {% if form.color.errors %}<small class="text-danger d-block mt-1">{{ form.color.errors|join:", " }}</small>{% endif %}
+                            {% if form.cate_color.errors %}<small class="text-danger d-block mt-1">{{ form.cate_color.errors|join:", " }}</small>{% endif %}
                         </div>
                     </div>
 
@@ -91,30 +85,30 @@
                         <i class="fas fa-align-left"></i> 3. Detalle e Imagen de Portada
                     </div>
                     <div class="form-group mb-4">
-                        <label for="{{ form.descripcion.id_for_label }}" class="font-weight-bold">Descripción de la Categoría</label>
-                        {{ form.descripcion }}
+                        <label for="{{ form.cate_descripcion.id_for_label }}" class="font-weight-bold">Descripción de la Categoría</label>
+                        {{ form.cate_descripcion }}
                         <small class="form-text text-muted">Breve texto explicativo que se muestra al filtrar productos.</small>
-                        {% if form.descripcion.errors %}<small class="text-danger d-block mt-1">{{ form.descripcion.errors|join:", " }}</small>{% endif %}
+                        {% if form.cate_descripcion.errors %}<small class="text-danger d-block mt-1">{{ form.cate_descripcion.errors|join:", " }}</small>{% endif %}
                     </div>
 
                     <div class="form-group mb-4">
-                        <label for="{{ form.imagen.id_for_label }}" class="font-weight-bold d-block">Imagen de la Categoría</label>
+                        <label for="{{ form.cate_imagen.id_for_label }}" class="font-weight-bold d-block">Imagen de la Categoría</label>
                         
-                        {% if object and object.imagen %}
+                        {% if object and object.cate_imagen %}
                         <div class="mb-3 p-3 bg-light rounded border d-flex align-items-center gap-3" style="max-width: 450px;">
-                            <img src="{{ object.imagen.url }}" alt="{{ object.nombre }}" class="rounded shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
+                            <img src="{{ object.cate_imagen.url }}" alt="{{ object.cate_nombre }}" class="rounded shadow-sm" style="width: 75px; height: 75px; object-fit: cover;">
                             <div>
-                                <strong class="d-block text-dark">{{ object.nombre }}</strong>
+                                <strong class="d-block text-dark">{{ object.cate_nombre }}</strong>
                                 <small class="text-success font-weight-bold"><i class="fas fa-check-circle"></i> Imagen cargada</small>
                             </div>
                         </div>
                         {% endif %}
 
                         <div class="p-3 bg-light rounded border">
-                            {{ form.imagen }}
+                            {{ form.cate_imagen }}
                             <small class="form-text text-muted mt-2">Formatos aceptados: JPG, PNG, WEBP. Tamaño recomendado 600x400 px.</small>
                         </div>
-                        {% if form.imagen.errors %}<small class="text-danger d-block mt-1">{{ form.imagen.errors|join:", " }}</small>{% endif %}
+                        {% if form.cate_imagen.errors %}<small class="text-danger d-block mt-1">{{ form.cate_imagen.errors|join:", " }}</small>{% endif %}
                     </div>
 
                     {# Sección 4: Estado Activa (Checkbox Moderno) #}
@@ -122,14 +116,14 @@
                         <i class="fas fa-toggle-on"></i> 4. Estado de Categoría
                     </div>
                     <div class="form-group mb-2">
-                        <label class="custom-switch-card" for="{{ form.activa.id_for_label }}">
-                            {{ form.activa }}
+                        <label class="custom-switch-card" for="{{ form.cate_active.id_for_label }}">
+                            {{ form.cate_active }}
                             <div>
                                 <span class="switch-label d-block">Categoría Activa (Visible en el menú POS)</span>
                                 <small class="text-muted d-block mt-1">Si está desactivada, la pestaña y sus productos no se mostrarán en la pantalla de pedidos.</small>
                             </div>
                         </label>
-                        {% if form.activa.errors %}<small class="text-danger d-block mt-1">{{ form.activa.errors|join:", " }}</small>{% endif %}
+                        {% if form.cate_active.errors %}<small class="text-danger d-block mt-1">{{ form.cate_active.errors|join:", " }}</small>{% endif %}
                     </div>
 
                 </div>

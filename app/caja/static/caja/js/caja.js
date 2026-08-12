@@ -41,8 +41,45 @@
     }
   }
 
+  function sanitizarMonto(v) {
+    var limpio = String(v || '').replace(/[^\d.,]/g, '');
+    var prim = limpio.search(/[.,]/);
+    if (prim === -1) return limpio.slice(0, 10);
+    var ints = limpio.slice(0, prim).replace(/[.,]/g, '').slice(0, 10);
+    var decs = limpio.slice(prim + 1).replace(/[.,]/g, '').slice(0, 2);
+    return ints + ',' + decs;
+  }
+
   if (metodo) metodo.addEventListener('change', actualizarPago);
-  if (recibido) recibido.addEventListener('input', actualizarPago);
+  if (recibido) {
+    recibido.addEventListener('keydown', function (e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      var tecla = e.key;
+      if (tecla.length !== 1) return;
+      if (!/[0-9.,]/.test(tecla)) {
+        e.preventDefault();
+        return;
+      }
+      var actual = sanitizarMonto(recibido.value);
+      var inicio = recibido.selectionStart;
+      var fin = recibido.selectionEnd;
+      var hipotetico = actual.slice(0, inicio) + tecla + actual.slice(fin);
+      if (sanitizarMonto(hipotetico) !== hipotetico) e.preventDefault();
+    });
+
+    recibido.addEventListener('paste', function (e) {
+      var texto = (e.clipboardData || window.clipboardData).getData('text') || '';
+      var solo = texto.replace(/[^\d.,]/g, '');
+      var limpio = sanitizarMonto(texto);
+      if (limpio.replace(',', '.') !== solo.replace(',', '.')) e.preventDefault();
+    });
+
+    recibido.addEventListener('input', function () {
+      var s = sanitizarMonto(recibido.value);
+      if (recibido.value !== s) recibido.value = s;
+      actualizarPago();
+    });
+  }
 
   actualizarPago();
 })();

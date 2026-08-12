@@ -70,28 +70,28 @@ class GlobalSearchView(LoginRequiredMixin, TemplateView):
         profile = getattr(self.request.user, 'profile', None)
         es_admin = self.request.user.is_superuser or (profile and profile.es_admin)
 
-        prod_qs = Product.objects.select_related('categoria').filter(
-            Q(nombre__icontains=q) | Q(descripcion__icontains=q)
+        prod_qs = Product.objects.select_related('prod_categoria').filter(
+            Q(prod_nombre__icontains=q) | Q(prod_descripcion__icontains=q)
         )
         if not es_admin:
-            prod_qs = prod_qs.filter(activo=True)
+            prod_qs = prod_qs.filter(prod_active=True)
 
-        ped_qs = Order.objects.select_related('vendedor').filter(
-            Q(numero__icontains=q) | Q(cliente__icontains=q) | Q(notas__icontains=q)
-        ).order_by('-creado')
+        ped_qs = Order.objects.select_related('pedi_vendedor').filter(
+            Q(pedi_numero__icontains=q) | Q(pedi_cliente__icontains=q) | Q(pedi_notas__icontains=q)
+        ).order_by('-pedi_creado')
         if not es_admin:
-            ped_qs = ped_qs.filter(vendedor=self.request.user)
+            ped_qs = ped_qs.filter(pedi_vendedor=self.request.user)
 
         cat_qs = []
         emp_qs = []
         if es_admin:
-            cat_qs = Category.objects.filter(nombre__icontains=q)
+            cat_qs = Category.objects.filter(cate_nombre__icontains=q)
             emp_qs = User.objects.select_related('profile').filter(
                 Q(username__icontains=q) |
                 Q(first_name__icontains=q) |
                 Q(last_name__icontains=q) |
                 Q(email__icontains=q)
-            ).exclude(profile__rol=Profile.ROL_SUPEROWNER)  # superowner no aparece en búsquedas
+            ).exclude(profile__perf_rol=Profile.ROL_SUPEROWNER)  # superowner no aparece en búsquedas
 
         ctx['productos'] = prod_qs[:15]
         ctx['productos_count'] = prod_qs.count()
@@ -196,26 +196,26 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         inicio_semana = hoy - timedelta(days=hoy.weekday())
         inicio_mes = hoy.replace(day=1)
 
-        pedidos_hoy = Order.objects.filter(creado__date=hoy)
-        ventas_hoy = pedidos_hoy.filter(estado=Order.ESTADO_COMPLETADO).aggregate(
-            total=Sum('total'), cantidad=Count('id'),
+        pedidos_hoy = Order.objects.filter(pedi_creado__date=hoy)
+        ventas_hoy = pedidos_hoy.filter(pedi_active=Order.ESTADO_COMPLETADO).aggregate(
+            total=Sum('pedi_total'), cantidad=Count('id_pedi'),
         )
         ventas_semana = Order.objects.filter(
-            creado__date__gte=inicio_semana,
-            estado=Order.ESTADO_COMPLETADO,
-        ).aggregate(total=Sum('total'), cantidad=Count('id'))
+            pedi_creado__date__gte=inicio_semana,
+            pedi_active=Order.ESTADO_COMPLETADO,
+        ).aggregate(total=Sum('pedi_total'), cantidad=Count('id_pedi'))
         ventas_mes = Order.objects.filter(
-            creado__date__gte=inicio_mes,
-            estado=Order.ESTADO_COMPLETADO,
-        ).aggregate(total=Sum('total'), cantidad=Count('id'))
+            pedi_creado__date__gte=inicio_mes,
+            pedi_active=Order.ESTADO_COMPLETADO,
+        ).aggregate(total=Sum('pedi_total'), cantidad=Count('id_pedi'))
 
         top_productos = (
             OrderItem.objects.filter(
-                pedido__creado__date__gte=inicio_mes,
-                pedido__estado=Order.ESTADO_COMPLETADO,
+                deta_pedido__pedi_creado__date__gte=inicio_mes,
+                deta_pedido__pedi_active=Order.ESTADO_COMPLETADO,
             )
-            .values('producto__nombre')
-            .annotate(cantidad=Sum('cantidad'), ingresos=Sum('subtotal'))
+            .values('deta_producto__prod_nombre')
+            .annotate(cantidad=Sum('deta_cantidad'), ingresos=Sum('deta_subtotal'))
             .order_by('-cantidad')[:5]
         )
 
@@ -224,8 +224,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         for i in range(6, -1, -1):
             dia = hoy - timedelta(days=i)
             total = Order.objects.filter(
-                creado__date=dia, estado=Order.ESTADO_COMPLETADO,
-            ).aggregate(t=Sum('total'))['t'] or Decimal('0')
+                pedi_creado__date=dia, pedi_active=Order.ESTADO_COMPLETADO,
+            ).aggregate(t=Sum('pedi_total'))['t'] or Decimal('0')
             dias_7_labels.append(dia.strftime('%a %d/%m'))
             dias_7_data.append(float(total))
 
@@ -234,8 +234,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         for i in range(29, -1, -1):
             dia = hoy - timedelta(days=i)
             total = Order.objects.filter(
-                creado__date=dia, estado=Order.ESTADO_COMPLETADO,
-            ).aggregate(t=Sum('total'))['t'] or Decimal('0')
+                pedi_creado__date=dia, pedi_active=Order.ESTADO_COMPLETADO,
+            ).aggregate(t=Sum('pedi_total'))['t'] or Decimal('0')
             dias_30_labels.append(dia.strftime('%d/%m'))
             dias_30_data.append(float(total))
 
@@ -249,10 +249,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 anio_target -= 1
             
             total = Order.objects.filter(
-                creado__year=anio_target,
-                creado__month=mes_target,
-                estado=Order.ESTADO_COMPLETADO,
-            ).aggregate(t=Sum('total'))['t'] or Decimal('0')
+                pedi_creado__year=anio_target,
+                pedi_creado__month=mes_target,
+                pedi_active=Order.ESTADO_COMPLETADO,
+            ).aggregate(t=Sum('pedi_total'))['t'] or Decimal('0')
             
             from datetime import date
             dt_target = date(anio_target, mes_target, 1)
@@ -263,24 +263,24 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         def _get_cat_data(filter_kwargs):
             cat_qs = (
                 OrderItem.objects.filter(
-                    pedido__estado=Order.ESTADO_COMPLETADO,
+                    deta_pedido__pedi_active=Order.ESTADO_COMPLETADO,
                     **filter_kwargs
                 )
-                .values('producto__categoria__nombre', 'producto__categoria__color')
-                .annotate(total=Sum('subtotal'))
+                .values('deta_producto__prod_categoria__cate_nombre', 'deta_producto__prod_categoria__cate_color')
+                .annotate(total=Sum('deta_subtotal'))
                 .order_by('-total')
             )
             labels, data, colors = [], [], []
             for c in cat_qs:
-                labels.append(c['producto__categoria__nombre'] or 'Sin categoría')
+                labels.append(c['deta_producto__prod_categoria__cate_nombre'] or 'Sin categoría')
                 data.append(float(c['total'] or 0))
-                colors.append(c['producto__categoria__color'] or '#2563eb')
+                colors.append(c['deta_producto__prod_categoria__cate_color'] or '#2563eb')
             return {'labels': labels, 'data': data, 'colors': colors}
 
-        cat_mes = _get_cat_data({'pedido__creado__date__gte': inicio_mes})
-        cat_7d = _get_cat_data({'pedido__creado__date__gte': hoy - timedelta(days=6)})
-        cat_30d = _get_cat_data({'pedido__creado__date__gte': hoy - timedelta(days=29)})
-        cat_12m = _get_cat_data({'pedido__creado__date__gte': hoy - timedelta(days=365)})
+        cat_mes = _get_cat_data({'deta_pedido__pedi_creado__date__gte': inicio_mes})
+        cat_7d = _get_cat_data({'deta_pedido__pedi_creado__date__gte': hoy - timedelta(days=6)})
+        cat_30d = _get_cat_data({'deta_pedido__pedi_creado__date__gte': hoy - timedelta(days=29)})
+        cat_12m = _get_cat_data({'deta_pedido__pedi_creado__date__gte': hoy - timedelta(days=365)})
 
         chart_data = {
             'periodos': {
@@ -305,16 +305,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'ventas_semana_cantidad': ventas_semana.get('cantidad') or 0,
             'ventas_mes_total': ventas_mes.get('total') or 0,
             'ventas_mes_cantidad': ventas_mes.get('cantidad') or 0,
-            'pedidos_pendientes': Order.objects.filter(estado=Order.ESTADO_PENDIENTE).count(),
-            'productos_activos': Product.objects.filter(activo=True).count(),
+            'pedidos_pendientes': Order.objects.filter(pedi_active=Order.ESTADO_PENDIENTE).count(),
+            'productos_activos': Product.objects.filter(prod_active=True).count(),
             'empleados_activos': User.objects.filter(
-                is_active=True, profile__rol=Profile.ROL_EMPLEADO,
+                is_active=True, profile__perf_rol=Profile.ROL_EMPLEADO,
             ).count(),
-            'mis_pedidos_hoy': pedidos_hoy.filter(vendedor=self.request.user).count(),
-            'ultimos_pedidos': Order.objects.select_related('vendedor').order_by('-creado')[:8],
+            'mis_pedidos_hoy': pedidos_hoy.filter(pedi_vendedor=self.request.user).count(),
+            'ultimos_pedidos': Order.objects.select_related('pedi_vendedor').order_by('-pedi_creado')[:8],
             'mis_ultimos_pedidos': Order.objects.filter(
-                vendedor=self.request.user
-            ).order_by('-creado')[:8],
+                pedi_vendedor=self.request.user
+            ).order_by('-pedi_creado')[:8],
             'top_productos': list(top_productos),
             'chart_data': chart_data,
         })
@@ -339,7 +339,7 @@ class EmpleadoListView(AdminRequiredMixin, ListView):
     def get_queryset(self):
         # Superowners nunca aparecen en la lista de empleados
         qs = User.objects.select_related('profile').exclude(
-            profile__rol=Profile.ROL_SUPEROWNER
+            profile__perf_rol=Profile.ROL_SUPEROWNER
         ).order_by('-date_joined')
         q = self.request.GET.get('q', '').strip()
         if q:
@@ -350,7 +350,7 @@ class EmpleadoListView(AdminRequiredMixin, ListView):
             )
         rol = self.request.GET.get('rol', '').strip()
         if rol:
-            qs = qs.filter(profile__rol=rol)
+            qs = qs.filter(profile__perf_rol=rol)
         estado = self.request.GET.get('estado', '').strip()
         if estado == 'activos':
             qs = qs.filter(is_active=True)
@@ -430,8 +430,8 @@ class EmpleadoDeleteView(AdminRequiredMixin, DetailView):
         usuario.is_active = False
         usuario.save(update_fields=['is_active'])
         if hasattr(usuario, 'profile'):
-            usuario.profile.activo = False
-            usuario.profile.save(update_fields=['activo'])
+            usuario.profile.perf_active = False
+            usuario.profile.save(update_fields=['perf_active'])
 
         messages.success(
             request,
@@ -452,8 +452,8 @@ class EmpleadoActivateView(AdminRequiredMixin, DetailView):
         usuario.is_active = True
         usuario.save(update_fields=['is_active'])
         if hasattr(usuario, 'profile'):
-            usuario.profile.activo = True
-            usuario.profile.save(update_fields=['activo'])
+            usuario.profile.perf_active = True
+            usuario.profile.save(update_fields=['perf_active'])
         messages.success(request, f'Usuario "{usuario.username}" reactivado.')
         return redirect('users:empleado_list')
 
@@ -482,8 +482,8 @@ def perfil_view(request):
     else:
         form = PerfilForm(instance=request.user)
 
-    ventas_agg = Order.objects.filter(vendedor=request.user, estado=Order.ESTADO_COMPLETADO).aggregate(
-        total=Sum('total'), cantidad=Count('id')
+    ventas_agg = Order.objects.filter(pedi_vendedor=request.user, pedi_active=Order.ESTADO_COMPLETADO).aggregate(
+        total=Sum('pedi_total'), cantidad=Count('id_pedi')
     )
 
     ctx = {

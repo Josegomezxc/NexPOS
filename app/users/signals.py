@@ -10,6 +10,6 @@ from .models import Profile
 def create_or_update_profile(sender, instance, created, **kwargs):
     if created:
         rol = Profile.ROL_ADMIN if instance.is_superuser else Profile.ROL_EMPLEADO
-        Profile.objects.create(user=instance, rol=rol)
+        Profile.objects.create(perf_usuario=instance, perf_rol=rol)
     else:
-        Profile.objects.get_or_create(user=instance)
+        Profile.objects.get_or_create(perf_usuario=instance)

@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Editar Pedido {{ object.numero }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
+{% block title %}Editar Pedido {{ object.pedi_numero }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">Pedidos</a></li>
-<li class="breadcrumb-item"><a href="{{ object.get_absolute_url }}">{{ object.numero }}</a></li>
+<li class="breadcrumb-item"><a href="{{ object.get_absolute_url }}">{{ object.pedi_numero }}</a></li>
 <li class="breadcrumb-item active">Editar</li>
 {% endblock %}
 
 {% block content %}
 <section class="page-hero" aria-label="Cabecera del formulario de pedido">
-    <h1><i class="fas fa-pencil-alt"></i> Editar Pedido {{ object.numero }}</h1>
+    <h1><i class="fas fa-pencil-alt"></i> Editar Pedido {{ object.pedi_numero }}</h1>
     <p class="lead">Modificá las observaciones o notas del pedido. Para modificar productos, utilizá el módulo POS.</p>
     <div class="hero-actions">
         <a href="{{ object.get_absolute_url }}" class="btn btn-ghost">
@@ -34,7 +34,7 @@
                 <div class="card-body">
                     <div class="form-row">
                         {% for field in form %}
-                        {% if field.name != 'razon_social' or object.tipo_identificacion == '04' %}
+                        {% if field.name != 'razon_social' or object.pedi_tipo_identificacion == '04' %}
                         <div class="form-group col-md-{% if field.name == 'notas' %}12{% else %}6{% endif %}">
                             {% if field.field.widget.input_type == 'checkbox' %}
                                 <div class="custom-control custom-checkbox mt-md-4">

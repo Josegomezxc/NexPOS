@@ -51,7 +51,7 @@ class UsersTests(TestCase):
     def test_profile_creado_automaticamente(self):
         self.assertTrue(hasattr(self.admin, 'profile'))
         self.assertTrue(hasattr(self.empleado, 'profile'))
-        self.assertEqual(self.admin.profile.rol, Profile.ROL_ADMIN)
+        self.assertEqual(self.admin.profile.perf_rol, Profile.ROL_ADMIN)
 
     def test_login_ok(self):
         ok = self.client.login(username='juan', password='juan12345')
@@ -81,7 +81,7 @@ class UsersTests(TestCase):
         })
         self.assertEqual(resp.status_code, 302)
         self.empleado.profile.refresh_from_db()
-        self.assertEqual(self.empleado.profile.rol, Profile.ROL_EMPLEADO)
+        self.assertEqual(self.empleado.profile.perf_rol, Profile.ROL_EMPLEADO)
         self.assertFalse(self.empleado.is_superuser)
 
     def test_perfil_no_permite_autodesactivarse(self):

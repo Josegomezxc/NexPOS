@@ -28,12 +28,12 @@ def topbar_notifs(request):
     es_admin = request.user.is_superuser or (profile and profile.es_admin)
 
     # Alertas: pedidos pendientes (admin ve todos, empleado solo los suyos)
-    pendientes_qs = Order.objects.filter(estado=Order.ESTADO_PENDIENTE)
+    pendientes_qs = Order.objects.filter(pedi_active=Order.ESTADO_PENDIENTE)
     if not es_admin:
-        pendientes_qs = pendientes_qs.filter(vendedor=request.user)
+        pendientes_qs = pendientes_qs.filter(pedi_vendedor=request.user)
 
     # Una sola query salvo que haya más de 5 pendientes (entonces sí contamos)
-    alertas = list(pendientes_qs.select_related('vendedor').order_by('-creado')[:5])
+    alertas = list(pendientes_qs.select_related('pedi_vendedor').order_by('-pedi_creado')[:5])
     if len(alertas) == 5:
         alertas_count = pendientes_qs.count()
     else:

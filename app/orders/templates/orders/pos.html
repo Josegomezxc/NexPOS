@@ -61,8 +61,8 @@
                     <i class="fas fa-th-large"></i> Todas
                 </button>
                 {% for c in categorias %}
-                <button type="button" class="pos-cat-pill" data-cat-id="{{ c.id }}" data-color="{{ c.color }}">
-                    <i class="{{ c.icono|default:'fas fa-tag' }}"></i> {{ c.nombre }}
+                <button type="button" class="pos-cat-pill" data-cat-id="{{ c.id_cate }}" data-color="{{ c.cate_color }}">
+                    <i class="{{ c.cate_icono|default:'fas fa-tag' }}"></i> {{ c.cate_nombre }}
                 </button>
                 {% endfor %}
             </div>
@@ -72,34 +72,34 @@
         <div class="pos-product-touch-grid" id="pos-touch-grid">
             {% for p in productos %}
             <div class="pos-touch-card"
-                 data-id="{{ p.id }}"
-                 data-nombre="{{ p.nombre }}"
-                 data-precio="{{ p.precio|stringformat:'s' }}"
-                 data-categoria-id="{{ p.categoria_id }}"
-                 data-categoria-nombre="{{ p.categoria.nombre }}"
-                 data-categoria-color="{{ p.categoria.color }}"
-                 data-descripcion="{{ p.descripcion|default:'' }}"
-                 data-imagen="{% if p.imagen %}{{ p.imagen.url }}{% endif %}"
+                 data-id="{{ p.id_prod }}"
+                 data-nombre="{{ p.prod_nombre }}"
+                 data-precio="{{ p.prod_precio|stringformat:'s' }}"
+                 data-categoria-id="{{ p.prod_categoria_id }}"
+                 data-categoria-nombre="{{ p.prod_categoria.cate_nombre }}"
+                 data-categoria-color="{{ p.prod_categoria.cate_color }}"
+                 data-descripcion="{{ p.prod_descripcion|default:'' }}"
+                 data-imagen="{% if p.prod_imagen %}{{ p.prod_imagen.url }}{% endif %}"
                  role="button" tabindex="0">
                  
                  <div class="pos-touch-card-img-wrap">
-                     {% if p.imagen %}
-                         <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="pos-touch-card-img">
+                     {% if p.prod_imagen %}
+                         <img src="{{ p.prod_imagen.url }}" alt="{{ p.prod_nombre }}" class="pos-touch-card-img">
                      {% else %}
-                         <div class="pos-touch-card-placeholder" style="background: linear-gradient(135deg, {{ p.categoria.color }} 0%, #1e293b 120%);">
-                             <i class="{{ p.categoria.icono|default:'fas fa-utensils' }}"></i>
+                         <div class="pos-touch-card-placeholder" style="background: linear-gradient(135deg, {{ p.prod_categoria.cate_color }} 0%, #1e293b 120%);">
+                             <i class="{{ p.prod_categoria.cate_icono|default:'fas fa-utensils' }}"></i>
                          </div>
                      {% endif %}
 
-                     <span class="pos-touch-card-price">${{ p.precio|floatformat:2 }}</span>
+                     <span class="pos-touch-card-price">${{ p.prod_precio|floatformat:2 }}</span>
                  </div>
 
                  <div class="pos-touch-card-body">
-                     <span class="badge pos-touch-card-cat" style="background-color: {{ p.categoria.color }}; color: #fff;">
-                         {{ p.categoria.nombre }}
+                     <span class="badge pos-touch-card-cat" style="background-color: {{ p.prod_categoria.cate_color }}; color: #fff;">
+                         {{ p.prod_categoria.cate_nombre }}
                      </span>
-                     <h4 class="pos-touch-card-title">{{ p.nombre }}</h4>
-                     <p class="pos-touch-card-desc">{{ p.descripcion|default:"Sin descripción." }}</p>
+                     <h4 class="pos-touch-card-title">{{ p.prod_nombre }}</h4>
+                     <p class="pos-touch-card-desc">{{ p.prod_descripcion|default:"Sin descripción." }}</p>
                      
                      <button type="button" class="btn btn-sm btn-outline-primary pos-touch-card-add-btn">
                          <i class="fas fa-plus"></i> Agregar

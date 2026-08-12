@@ -93,93 +93,93 @@ class ValidadoresIdentificacionTests(TestCase):
 class OrderTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='vendedor', password='pass1234')
-        cat = Category.objects.create(nombre='Hamburguesas')
-        self.p1 = Product.objects.create(nombre='Doble', categoria=cat, precio=3000)
-        self.p2 = Product.objects.create(nombre='Simple', categoria=cat, precio=2000)
+        cat = Category.objects.create(cate_nombre='Hamburguesas')
+        self.p1 = Product.objects.create(prod_nombre='Doble', prod_categoria=cat, prod_precio=3000)
+        self.p2 = Product.objects.create(prod_nombre='Simple', prod_categoria=cat, prod_precio=2000)
     def test_pedido_recalcula_total(self):
-        pedido = Order.objects.create(vendedor=self.user)
-        OrderItem.objects.create(pedido=pedido, producto=self.p1, cantidad=2, precio_unitario=3000)
-        OrderItem.objects.create(pedido=pedido, producto=self.p2, cantidad=1, precio_unitario=2000)
+        pedido = Order.objects.create(pedi_vendedor=self.user)
+        OrderItem.objects.create(deta_pedido=pedido, deta_producto=self.p1, deta_cantidad=2, deta_precio_unitario=3000)
+        OrderItem.objects.create(deta_pedido=pedido, deta_producto=self.p2, deta_cantidad=1, deta_precio_unitario=2000)
         pedido.recalcular_totales()
-        self.assertEqual(pedido.subtotal, Decimal('8000.00'))
-        self.assertEqual(pedido.total, Decimal('8000.00'))
+        self.assertEqual(pedido.pedi_subtotal, Decimal('8000.00'))
+        self.assertEqual(pedido.pedi_total, Decimal('8000.00'))
 
     def test_numero_se_genera(self):
-        pedido = Order.objects.create(vendedor=self.user)
-        self.assertTrue(pedido.numero.startswith('P-'))
+        pedido = Order.objects.create(pedi_vendedor=self.user)
+        self.assertTrue(pedido.pedi_numero.startswith('P-'))
 
     def test_edicion_normaliza_nombres_y_rechaza_descuento_absurdo(self):
         from .forms import OrderEditForm
 
-        pedido = Order.objects.create(vendedor=self.user)
-        OrderItem.objects.create(pedido=pedido, producto=self.p1, cantidad=1, precio_unitario=3000)
+        pedido = Order.objects.create(pedi_vendedor=self.user)
+        OrderItem.objects.create(deta_pedido=pedido, deta_producto=self.p1, deta_cantidad=1, deta_precio_unitario=3000)
         pedido.recalcular_totales()  # subtotal $30.00
 
         form = OrderEditForm(
             data={
                 'nombres': 'C l i e n t e',
                 'apellidos': 'U n o',
-                'metodo_pago': 'efectivo',
-                'descuento': '29.999',
-                'notas': '',
+                'pedi_metodo_pago': 'efectivo',
+                'pedi_descuento': '29.999',
+                'pedi_notas': '',
             },
             instance=pedido,
         )
         self.assertFalse(form.is_valid())
-        self.assertIn('2 decimales', form.errors['descuento'][0])
+        self.assertIn('2 decimales', form.errors['pedi_descuento'][0])
 
         form = OrderEditForm(
             data={
                 'nombres': 'C l i e n t e',
                 'apellidos': 'U n o',
-                'metodo_pago': 'efectivo',
-                'descuento': '1.00',
-                'notas': '',
+                'pedi_metodo_pago': 'efectivo',
+                'pedi_descuento': '1.00',
+                'pedi_notas': '',
             },
             instance=pedido,
         )
         self.assertTrue(form.is_valid(), form.errors)
-        self.assertEqual(form.cleaned_data['descuento'], Decimal('1.00'))
-        self.assertEqual(pedido.nombres, 'Cliente')
-        self.assertEqual(pedido.apellidos, 'Uno')
-        self.assertEqual(pedido.cliente, 'Cliente Uno')
+        self.assertEqual(form.cleaned_data['pedi_descuento'], Decimal('1.00'))
+        self.assertEqual(pedido.pedi_nombres, 'Cliente')
+        self.assertEqual(pedido.pedi_apellidos, 'Uno')
+        self.assertEqual(pedido.pedi_cliente, 'Cliente Uno')
 
     def test_edicion_con_razon_social_para_ruc(self):
         from .forms import OrderEditForm
 
         pedido = Order.objects.create(
-            vendedor=self.user,
-            tipo_identificacion='04', identificacion='1710034065001',
+            pedi_vendedor=self.user,
+            pedi_tipo_identificacion='04', pedi_identificacion='1710034065001',
         )
         form = OrderEditForm(
             data={
                 'razon_social': 'Restaurante XYZ',
-                'metodo_pago': 'efectivo',
-                'descuento': '0',
-                'notas': '',
+                'pedi_metodo_pago': 'efectivo',
+                'pedi_descuento': '0',
+                'pedi_notas': '',
             },
             instance=pedido,
         )
         self.assertTrue(form.is_valid(), form.errors)
-        self.assertEqual(pedido.cliente, 'Restaurante XYZ')
-        self.assertEqual(pedido.nombres, '')
-        self.assertEqual(pedido.apellidos, '')
+        self.assertEqual(pedido.pedi_cliente, 'Restaurante XYZ')
+        self.assertEqual(pedido.pedi_nombres, '')
+        self.assertEqual(pedido.pedi_apellidos, '')
 
     def test_edicion_split_nombre_viejo_en_initial(self):
         """Pedidos antiguos (solo nombre completo) se reparten al editar."""
         from .forms import OrderEditForm
 
-        pedido = Order.objects.create(vendedor=self.user, cliente='Josue Gomez')
+        pedido = Order.objects.create(pedi_vendedor=self.user, pedi_cliente='Josue Gomez')
         form = OrderEditForm(instance=pedido)
         self.assertEqual(form.fields['nombres'].initial, 'Josue')
         self.assertEqual(form.fields['apellidos'].initial, 'Gomez')
 
     def test_recalcular_totales(self):
-        pedido = Order.objects.create(vendedor=self.user)
-        OrderItem.objects.create(pedido=pedido, producto=self.p1, cantidad=1, precio_unitario=3000)
+        pedido = Order.objects.create(pedi_vendedor=self.user)
+        OrderItem.objects.create(deta_pedido=pedido, deta_producto=self.p1, deta_cantidad=1, deta_precio_unitario=3000)
         pedido.recalcular_totales()
-        self.assertEqual(pedido.subtotal, Decimal('3000.00'))
-        self.assertEqual(pedido.total, Decimal('3000.00'))
+        self.assertEqual(pedido.pedi_subtotal, Decimal('3000.00'))
+        self.assertEqual(pedido.pedi_total, Decimal('3000.00'))
         self.assertEqual(pedido.iva_subtotal, Decimal('450.00'))
         self.assertEqual(pedido.subtotal_sin_iva, Decimal('2550.00'))
 
@@ -189,14 +189,14 @@ class PermisosPedidosTests(TestCase):
         from app.users.models import Profile
 
         self.admin = User.objects.create_user(username='admin', password='pass1234')
-        self.admin.profile.rol = Profile.ROL_ADMIN
+        self.admin.profile.perf_rol = Profile.ROL_ADMIN
         self.admin.profile.save()
 
         self.emp1 = User.objects.create_user(username='emp1', password='pass1234')
         self.emp2 = User.objects.create_user(username='emp2', password='pass1234')
-        cat = Category.objects.create(nombre='Bebidas')
-        self.p = Product.objects.create(nombre='Cola', categoria=cat, precio=1000)
-        self.pedido_emp2 = Order.objects.create(vendedor=self.emp2)
+        cat = Category.objects.create(cate_nombre='Bebidas')
+        self.p = Product.objects.create(prod_nombre='Cola', prod_categoria=cat, prod_precio=1000)
+        self.pedido_emp2 = Order.objects.create(pedi_vendedor=self.emp2)
 
     def test_empleado_no_ve_pedido_ajeno(self):
         self.client.login(username='emp1', password='pass1234')
@@ -222,7 +222,7 @@ class PermisosPedidosTests(TestCase):
         self.client.login(username='emp2', password='pass1234')
         resp = self.client.post(reverse('orders:order_cancelar', args=[self.pedido_emp2.pk]))
         self.pedido_emp2.refresh_from_db()
-        self.assertEqual(self.pedido_emp2.estado, Order.ESTADO_COMPLETADO)
+        self.assertEqual(self.pedido_emp2.pedi_active, Order.ESTADO_COMPLETADO)
 
     def test_no_se_edita_pedido_completado(self):
         self.pedido_emp2.completar(usuario=self.emp2)
@@ -230,17 +230,17 @@ class PermisosPedidosTests(TestCase):
         resp = self.client.post(
             reverse('orders:order_update', args=[self.pedido_emp2.pk]),
             {'nombres': 'Cliente', 'apellidos': 'X',
-             'metodo_pago': 'efectivo', 'descuento': '0', 'notas': ''},
+             'pedi_metodo_pago': 'efectivo', 'pedi_descuento': '0', 'pedi_notas': ''},
         )
         self.pedido_emp2.refresh_from_db()
-        self.assertEqual(self.pedido_emp2.cliente, '')
+        self.assertEqual(self.pedido_emp2.pedi_cliente, '')
 
 
 class POSAPITests(TestCase):
     def setUp(self):
         self.emp = User.objects.create_user(username='cajero', password='pass1234')
-        cat = Category.objects.create(nombre='Papas')
-        self.p = Product.objects.create(nombre='Porción', categoria=cat, precio=Decimal('2.50'))
+        cat = Category.objects.create(cate_nombre='Papas')
+        self.p = Product.objects.create(prod_nombre='Porción', prod_categoria=cat, prod_precio=Decimal('2.50'))
 
     def _crear_pedido(self, payload):
         return self.client.post(
@@ -259,7 +259,7 @@ class POSAPITests(TestCase):
         self.assertTrue(data['ok'])
         self.assertEqual(data['total'], '5.00')
         pedido = Order.objects.get(pk=data['pedido_id'])
-        self.assertEqual(pedido.estado, Order.ESTADO_PENDIENTE)
+        self.assertEqual(pedido.pedi_active, Order.ESTADO_PENDIENTE)
 
     def test_pos_siempre_crea_pedido_pendiente(self):
         """El POS ya no completa ni cobra: queda pendiente para Caja."""
@@ -272,9 +272,9 @@ class POSAPITests(TestCase):
         })
         self.assertTrue(resp.json()['ok'])
         pedido = Order.objects.get(pk=resp.json()['pedido_id'])
-        self.assertEqual(pedido.estado, Order.ESTADO_PENDIENTE)
-        self.assertEqual(pedido.metodo_pago, Order.METODO_EFECTIVO)
-        self.assertEqual(pedido.cliente, '')
+        self.assertEqual(pedido.pedi_active, Order.ESTADO_PENDIENTE)
+        self.assertEqual(pedido.pedi_metodo_pago, Order.METODO_EFECTIVO)
+        self.assertEqual(pedido.pedi_cliente, '')
 
     def test_descuento_mayor_al_subtotal_rechazado(self):
         self.client.login(username='cajero', password='pass1234')
