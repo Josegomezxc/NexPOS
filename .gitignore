@@ -58,6 +58,10 @@ pyvenv.cfg
 /staticfiles/
 /static_collected/
 
+# Base de datos local SQLite (backup/export para hosting)
+db.sqlite3
+*.sqlite3
+
 # Media uploads (fotos de productos, avatares, etc.)
 /media/
 

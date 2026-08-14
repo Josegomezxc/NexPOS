@@ -121,19 +121,28 @@ TEMPLATES = [
 WSGI_APPLICATION = 'doñaSara.wsgi.application'
 
 
-# Base de datos: PostgreSQL obligatoria.
+# Base de datos: PostgreSQL obligatoria en local.
 # Si existe DATABASE_URL (Heroku/Render/Railway) se usa tal cual;
 # si no, se arma desde las variables DB_*.
-DATABASES = {
-    'default': dj_database_url.config(
-        default=(
-            f"postgres://{env('DB_USER', 'postgres')}:{env('DB_PASSWORD', '')}"
-            f"@{env('DB_HOST', 'localhost')}:{env('DB_PORT', '5432')}/{env('DB_NAME', 'donasara_db')}"
-        ),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+# Con DB_ENGINE=sqlite se usa SQLite (hosting gratuito tipo PythonAnywhere).
+if env('DB_ENGINE') == 'sqlite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=(
+                f"postgres://{env('DB_USER', 'postgres')}:{env('DB_PASSWORD', '')}"
+                f"@{env('DB_HOST', 'localhost')}:{env('DB_PORT', '5432')}/{env('DB_NAME', 'donasara_db')}"
+            ),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -203,8 +212,9 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_AGE = 60 * 60 * 8       # 8 horas máximo
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Forzar HTTPS en producción
-SECURE_SSL_REDIRECT = not DEBUG
+# Forzar HTTPS en producción (se puede desactivar con SECURE_SSL_REDIRECT=False
+# si el proxy del hosting no envía X-Forwarded-Proto y provoca bucles)
+SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT', str(not DEBUG), cast=bool)
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
