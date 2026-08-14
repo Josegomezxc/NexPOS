@@ -10,6 +10,8 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -79,6 +81,7 @@ INSTALLED_APPS = [
     'app.products.apps.ProductsConfig',
     'app.orders.apps.OrdersConfig',
     'app.caja.apps.CajaConfig',
+    'app.mensajes.apps.MensajesConfig',
 ]
 
 MIDDLEWARE = [
@@ -118,30 +121,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'doñaSara.wsgi.application'
 
 
-# Base de datos - PostgreSQL si USE_POSTGRES=True, SQLite por defecto
-USE_POSTGRES = env('USE_POSTGRES', 'False', cast=bool)
-
-if USE_POSTGRES:
-    DATABASES = {
-        'default': {
-            'ENGINE': env('DB_ENGINE', 'django.db.backends.postgresql'),
-            'NAME': env('DB_NAME', 'donasara_db'),
-            'USER': env('DB_USER', 'postgres'),
-            'PASSWORD': env('DB_PASSWORD', 'postgres'),
-            'HOST': env('DB_HOST', 'localhost'),
-            'PORT': env('DB_PORT', '5432'),
-            'OPTIONS': {
-                'connect_timeout': 10,
-            },
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Base de datos: PostgreSQL obligatoria.
+# Si existe DATABASE_URL (Heroku/Render/Railway) se usa tal cual;
+# si no, se arma desde las variables DB_*.
+DATABASES = {
+    'default': dj_database_url.config(
+        default=(
+            f"postgres://{env('DB_USER', 'postgres')}:{env('DB_PASSWORD', '')}"
+            f"@{env('DB_HOST', 'localhost')}:{env('DB_PORT', '5432')}/{env('DB_NAME', 'donasara_db')}"
+        ),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -225,5 +217,5 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Rate limiting en login (sin dependencias externas, usa la cache de Django)
-LOGIN_MAX_ATTEMPTS = env('LOGIN_MAX_ATTEMPTS', '5', cast=int)
+LOGIN_MAX_ATTEMPTS = env('LOGIN_MAX_ATTEMPTS', '3', cast=int)
 LOGIN_COOLDOWN_SECONDS = env('LOGIN_COOLDOWN_SECONDS', '300', cast=int)

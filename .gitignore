@@ -53,11 +53,6 @@ pyvenv.cfg
 # Django
 # ────────────────────────────────────────────────
 *.log
-db.sqlite3
-db.sqlite3-journal
-*.sqlite3
-*.sqlite3-shm
-*.sqlite3-wal
 
 # Archivos generados por collectstatic (NO los static por app, esos sí van al repo)
 /staticfiles/

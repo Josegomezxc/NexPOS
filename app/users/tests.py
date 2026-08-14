@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import Profile
 
@@ -119,3 +120,170 @@ class UsersTests(TestCase):
         mensajes = list(get_messages(resp.wsgi_request))
         self.assertTrue(any('Demasiados intentos' in str(m) for m in mensajes))
         cache.clear()
+
+
+class BloqueoDuenoUsuariosTests(TestCase):
+    """Candado del superowner: el admin no puede reactivar un usuario que el due�o desactiv�."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='admin', password='admin12345'
+        )
+        self.superowner = User.objects.create_superuser(
+            username='chelo', password='chelo12345'
+        )
+        self.superowner.profile.perf_rol = Profile.ROL_SUPEROWNER
+        self.superowner.profile.save()
+        self.empleado = User.objects.create_user(
+            username='juan', password='juan12345'
+        )
+        self.url_reactivar = reverse('users:empleado_activate', args=[self.empleado.pk])
+        self.url_desactivar = reverse('users:empleado_delete', args=[self.empleado.pk])
+
+    def _bloquear_usuario(self):
+        self.empleado.is_active = False
+        self.empleado.save(update_fields=['is_active'])
+        perfil = self.empleado.profile
+        perfil.perf_active = False
+        perfil.perf_desactivado_por = self.superowner
+        perfil.perf_desactivado_fecha = timezone.now()
+        perfil.save(update_fields=[
+            'perf_active', 'perf_desactivado_por', 'perf_desactivado_fecha',
+        ])
+
+    def test_admin_no_puede_reactivar_usuario_del_dueno(self):
+        self._bloquear_usuario()
+        self.client.login(username='admin', password='admin12345')
+        resp = self.client.post(self.url_reactivar)
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertFalse(self.empleado.is_active)
+        self.empleado.profile.refresh_from_db()
+        self.assertFalse(self.empleado.profile.perf_active)
+
+    def test_superowner_reactiva_y_limpia_el_candado(self):
+        self._bloquear_usuario()
+        self.client.login(username='chelo', password='chelo12345')
+        resp = self.client.post(self.url_reactivar)
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertTrue(self.empleado.is_active)
+        self.empleado.profile.refresh_from_db()
+        self.assertTrue(self.empleado.profile.perf_active)
+        self.assertIsNone(self.empleado.profile.perf_desactivado_por)
+
+    def test_admin_reactiva_usuario_desactivado_por_admin(self):
+        self.empleado.is_active = False
+        self.empleado.save(update_fields=['is_active'])
+        perfil = self.empleado.profile
+        perfil.perf_active = False
+        perfil.perf_desactivado_por = self.admin
+        perfil.perf_desactivado_fecha = timezone.now()
+        perfil.save(update_fields=[
+            'perf_active', 'perf_desactivado_por', 'perf_desactivado_fecha',
+        ])
+        self.client.login(username='admin', password='admin12345')
+        resp = self.client.post(self.url_reactivar)
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertTrue(self.empleado.is_active)
+
+    def test_desactivacion_registra_quien_y_cuando(self):
+        self.client.login(username='admin', password='admin12345')
+        resp = self.client.post(self.url_desactivar)
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertFalse(self.empleado.is_active)
+        self.empleado.profile.refresh_from_db()
+        self.assertEqual(self.empleado.profile.perf_desactivado_por, self.admin)
+        self.assertIsNotNone(self.empleado.profile.perf_desactivado_fecha)
+
+    def test_admin_no_puede_editar_usuario_bloqueado_por_el_dueno(self):
+        self._bloquear_usuario()
+        self.client.login(username='admin', password='admin12345')
+        url = reverse('users:empleado_update', args=[self.empleado.pk])
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 302)
+        # ni siquiera vía POST del form con is_active marcado
+        resp = self.client.post(url, {'username': 'juan', 'is_active': 'on'})
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertFalse(self.empleado.is_active)
+        self.empleado.profile.refresh_from_db()
+        self.assertFalse(self.empleado.profile.perf_active)
+
+    def test_superowner_puede_editar_usuario_bloqueado(self):
+        self._bloquear_usuario()
+        self.client.login(username='chelo', password='chelo12345')
+        url = reverse('users:empleado_update', args=[self.empleado.pk])
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_admin_sigue_pudiendo_editar_usuario_activo(self):
+        self.client.login(username='admin', password='admin12345')
+        url = reverse('users:empleado_update', args=[self.empleado.pk])
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_lista_no_muestra_editar_en_card_bloqueada_por_dueno(self):
+        self._bloquear_usuario()
+        self.client.login(username='admin', password='admin12345')
+        resp = self.client.get(reverse('users:empleado_list'))
+        self.assertNotContains(
+            resp, reverse('users:empleado_update', args=[self.empleado.pk])
+        )
+
+    def test_lista_muestra_editar_en_card_activa(self):
+        self.client.login(username='admin', password='admin12345')
+        resp = self.client.get(reverse('users:empleado_list'))
+        self.assertContains(
+            resp, reverse('users:empleado_update', args=[self.empleado.pk])
+        )
+
+    def test_lista_muestra_icono_y_marca_del_dueno(self):
+        self._bloquear_usuario()
+        self.client.login(username='admin', password='admin12345')
+        resp = self.client.get(reverse('users:empleado_list'))
+        self.assertContains(resp, 'fa-lock')
+        self.assertContains(resp, 'data-bloqueo-dueno')
+        self.assertContains(resp, 'chelo')
+        self.assertContains(resp, 'data-tipo="Usuario"')
+        self.assertContains(resp, 'modalBloqueoDueno')
+
+    # ----- Edición desde el formulario: sincroniza el candado del perfil -----
+
+    def test_form_empleado_desactivacion_sincroniza_perfil(self):
+        self.client.login(username='admin', password='admin12345')
+        url = reverse('users:empleado_update', args=[self.empleado.pk])
+        resp = self.client.post(url, {
+            'username': 'juan', 'perf_rol': Profile.ROL_EMPLEADO,
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertFalse(self.empleado.is_active)
+        self.empleado.profile.refresh_from_db()
+        self.assertFalse(self.empleado.profile.perf_active)
+        self.assertEqual(self.empleado.profile.perf_desactivado_por, self.admin)
+        self.assertIsNotNone(self.empleado.profile.perf_desactivado_fecha)
+
+    def test_form_empleado_reactivacion_limpia_registro(self):
+        self.empleado.is_active = False
+        self.empleado.save(update_fields=['is_active'])
+        perfil = self.empleado.profile
+        perfil.perf_active = False
+        perfil.perf_desactivado_por = self.admin
+        perfil.perf_desactivado_fecha = timezone.now()
+        perfil.save(update_fields=[
+            'perf_active', 'perf_desactivado_por', 'perf_desactivado_fecha',
+        ])
+        self.client.login(username='admin', password='admin12345')
+        url = reverse('users:empleado_update', args=[self.empleado.pk])
+        resp = self.client.post(url, {
+            'username': 'juan', 'perf_rol': Profile.ROL_EMPLEADO,
+            'is_active': 'on',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.empleado.refresh_from_db()
+        self.assertTrue(self.empleado.is_active)
+        self.empleado.profile.refresh_from_db()
+        self.assertTrue(self.empleado.profile.perf_active)
+        self.assertIsNone(self.empleado.profile.perf_desactivado_por)
+        self.assertIsNone(self.empleado.profile.perf_desactivado_fecha)

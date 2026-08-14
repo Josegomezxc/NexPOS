@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editar mensaje - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'mensajes:list' %}">Mensajes</a></li>
+<li class="breadcrumb-item"><a href="{% url 'mensajes:detail' mensaje.pk %}">Detalle</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera de edición">
+    <h1><i class="fas fa-pencil-alt"></i> Editar mensaje #{{ mensaje.pk }}</h1>
+    <p class="lead">
+        El mensaje seguirá vinculado a {{ mensaje.get_accion_display|lower }}
+        {{ mensaje.get_tipo_display|lower }} "<strong>{{ mensaje.entidad_nombre }}</strong>".
+    </p>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <form method="post" class="card modern-card border-0 shadow-sm" data-guardar-cambios="1">
+            {% csrf_token %}
+            <div class="card-body">
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Revisá los campos marcados.
+                </div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="{{ form.texto.id_for_label }}">{{ form.texto.label }} *</label>
+                    {{ form.texto }}
+                    {% for error in form.texto.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                <a href="{% url 'mensajes:detail' mensaje.pk %}" class="btn btn-ghost">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{# Modal informativo: registro desactivado / bloqueado por el dueño del sistema #}
+{% load static %}
+<div class="modal fade" id="modalBloqueoDueno" tabindex="-1" role="dialog" aria-labelledby="modalBloqueoDuenoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title font-weight-bold text-white" id="modalBloqueoDuenoLabel">
+                    <i class="fas fa-crown mr-1"></i> Bloqueado por el dueño del sistema
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-2">
+                    <span class="badge badge-warning badge-pill px-3 py-2" id="md-bloqueo-tipo">Registro</span>
+                </div>
+                <div class="text-center mb-3" id="md-bloqueo-imagen-wrap" style="display:none;"></div>
+                <h5 class="text-center font-weight-bold mb-3" id="md-bloqueo-nombre">—</h5>
+                <p class="text-muted text-center mb-4" id="md-bloqueo-descripcion" style="display:none;">—</p>
+                <div class="bg-light rounded p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-muted font-weight-bold text-uppercase">Desactivado por</span>
+                        <span class="font-weight-600 text-dark">
+                            <i class="fas fa-user-shield mr-1"></i>
+                            <span id="md-bloqueo-dueno">—</span>
+                            <span class="text-warning font-weight-bold"> (dueño)</span>
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted font-weight-bold text-uppercase">Fecha y hora</span>
+                        <span class="font-weight-600 text-dark" id="md-bloqueo-fecha">—</span>
+                    </div>
+                </div>
+                <div class="alert alert-warning alert-permanent small mt-3 mb-0">
+                    <i class="fas fa-lock mr-1"></i>
+                    Solo el <strong>superowner</strong> (dueño del sistema) puede volver a activar este
+                    registro. El administrador no tiene permisos para revertir esta decisión.
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

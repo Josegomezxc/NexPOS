@@ -30,7 +30,9 @@ $(function () {
     //   data-confirm-url       -> si está, al aceptar hace POST a esa URL (con CSRF)
     //   data-confirm-form      -> si está y el trigger está dentro de un <form>,
     //                             al aceptar hace submit de ese form
-    $('.btn-confirm').on('click', function (e) {
+    // Delegado en el documento: así los botones que cambian de clase en
+    // runtime (ej. el botón protegido de categorías) no disparan el confirm.
+    $(document).on('click', '.btn-confirm', function (e) {
         e.preventDefault();
         var $btn = $(this);
         window.mostrarConfirmacion({

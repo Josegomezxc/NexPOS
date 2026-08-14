@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mensajes - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'mensajes/css/mensaje_list.css' %}">
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Mensajes</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera de mensajes">
+    <h1><i class="fas fa-envelope-open-text"></i> Mensajes</h1>
+    <p class="lead">Avisos generados por el dueño del sistema al desactivar o reactivar productos, categorías y empleados.</p>
+</section>
+
+<div class="card modern-card mb-4">
+    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center">
+        <h2 class="h6 m-0 font-weight-bold text-dark">
+            <i class="fas fa-inbox text-primary mr-1"></i> Bandeja de entrada
+            {% if no_leidos %}
+            <span class="badge badge-danger ml-1">{{ no_leidos }} sin leer</span>
+            {% endif %}
+        </h2>
+        <small class="text-muted">{{ mensajes|length }} mensaje{{ mensajes|length|pluralize }} en esta página</small>
+    </div>
+    <div class="card-body p-0">
+        {% if mensajes %}
+        <div class="table-responsive">
+            <table class="table modern-table mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Mensaje</th>
+                        <th class="d-none d-md-table-cell">Tipo</th>
+                        <th class="d-none d-md-table-cell">Acción</th>
+                        <th>Fecha</th>
+                        <th class="text-right">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grupo in grupos %}
+                    <tr class="day-group-header">
+                        <td colspan="5">{{ grupo.label }}</td>
+                    </tr>
+                    {% for m in grupo.mensajes %}
+                    <tr class="cursor-pointer {% if m.no_leido_entrega %}table-row-nuevo{% endif %}">
+                        <td class="align-middle">
+                            <a href="{% url 'mensajes:detail' m.pk %}" class="d-flex align-items-center text-decoration-none">
+                                <div class="avatar-circle avatar-circle-xs bg-primary text-white mr-2">
+                                    {{ m.emisor.get_full_name|default:m.emisor.username|slice:":1"|upper }}
+                                </div>
+                                <div class="min-width-0">
+                                    <span class="d-block text-dark {% if m.no_leido_entrega %}font-weight-bold{% else %}font-weight-normal{% endif %} mensaje-truncate">
+                                        {{ m.texto|truncatechars:90 }}
+                                    </span>
+                                    <small class="text-muted">por {{ m.emisor.get_full_name|default:m.emisor.username }}</small>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="align-middle d-none d-md-table-cell">
+                            <span class="chip-tipo
+                                {% if m.tipo == m.TIPO_PRODUCTO %}chip-tipo-amber
+                                {% elif m.tipo == m.TIPO_CATEGORIA %}chip-tipo-blue
+                                {% else %}chip-tipo-purple{% endif %}">
+                                {% if m.tipo == m.TIPO_PRODUCTO %}
+                                <i class="fas fa-hamburger" aria-hidden="true"></i>
+                                {% elif m.tipo == m.TIPO_CATEGORIA %}
+                                <i class="fas fa-tags" aria-hidden="true"></i>
+                                {% else %}
+                                <i class="fas fa-user-tie" aria-hidden="true"></i>
+                                {% endif %}
+                                {{ m.get_tipo_display }}
+                            </span>
+                        </td>
+                        <td class="align-middle d-none d-md-table-cell">
+                            {% if m.accion == m.ACCION_DESACTIVO %}
+                            <span class="badge badge-danger"><i class="fas fa-user-slash" aria-hidden="true"></i> {{ m.get_accion_display }}</span>
+                            {% else %}
+                            <span class="badge badge-success"><i class="fas fa-user-check" aria-hidden="true"></i> {{ m.get_accion_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle text-muted small">{{ m.creado|date:'d/m/Y H:i' }}</td>
+                        <td class="align-middle text-right">
+                            {% if m.visto_por_admin %}
+                            <i class="fas fa-check-circle text-success" title="Leído por el admin"></i>
+                            {% else %}
+                            <i class="fas fa-check-circle text-gray-500" title="Sin leer por el admin"></i>
+                            {% endif %}
+                            {% if m.no_leido_entrega %}
+                            <span class="badge badge-danger ml-1">Nuevo</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-5 mb-0">
+            <i class="fas fa-envelope-open-text fa-2x d-block mb-2"></i>
+            No hay mensajes todavía.
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Paginación de mensajes">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

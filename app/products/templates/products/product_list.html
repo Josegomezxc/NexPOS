@@ -82,9 +82,17 @@
             data-categoria-color="{{ p.prod_categoria.cate_color }}"
             data-activo="{{ p.prod_active|yesno:'1,0' }}"
             data-imagen="{% if p.prod_imagen %}{{ p.prod_imagen.url }}{% endif %}"
+            {% if user.profile.es_superowner or not p.prod_desactivado_por or not p.prod_desactivado_por.profile.es_superowner %}
             data-edit-url="{% url 'products:product_update' p.pk %}"
+            {% endif %}
             data-delete-url="{% url 'products:product_delete' p.pk %}"
             data-activate-url="{% url 'products:product_activate' p.pk %}"
+            {% if p.prod_desactivado_por.profile.es_superowner %}
+            data-bloqueo-dueno="1"
+            data-tipo="Producto"
+            data-dueno="{{ p.prod_desactivado_por.get_full_name|default:p.prod_desactivado_por.username }}"
+            data-fecha="{{ p.prod_desactivado_fecha|date:'d/m/Y H:i' }}"
+            {% endif %}
             tabindex="0" role="button" aria-label="Ver detalles de {{ p.prod_nombre }}">
             
             <div class="product-card-header">
@@ -97,9 +105,11 @@
                 {% endif %}
 
                 {% if p.prod_active %}
-                    <span class="badge badge-success product-status-badge">Activo</span>
+                    <span class="badge badge-success product-status-badge"> <i class="fas fa-circle text-success mr-1"></i>Activo</span>
                 {% else %}
-                    <span class="badge badge-secondary product-status-badge">Inactivo</span>
+                    <span class="badge badge-secondary product-status-badge">
+                        <i class="fas fa-lock mr-1"></i>Inactivo
+                    </span>
                 {% endif %}
 
                 <span class="product-price-badge">${{ p.prod_precio|floatformat:2 }}</span>
@@ -116,9 +126,32 @@
             </div>
 
             <div class="product-card-footer justify-content-center">
+                {% if user.profile.es_superowner or not p.prod_desactivado_por or not p.prod_desactivado_por.profile.es_superowner %}
                 <a href="{% url 'products:product_update' p.pk %}" class="btn btn-sm btn-outline-primary px-4" title="Editar">
                     <i class="fas fa-pencil-alt"></i> Editar
                 </a>
+                {% endif %}
+                {% if p.prod_active %}
+                <a href="{% url 'products:product_delete' p.pk %}" class="btn btn-sm btn-danger btn-confirm"
+                    title="Desactivar"
+                    data-confirm-titulo="¿Desactivar producto?"
+                    data-confirm="¿Desactivar {{ p.prod_nombre }}? No aparecerá en el POS pero se conservan sus ventas históricas."
+                    data-confirm-boton="Sí, desactivar"
+                    data-confirm-clase="btn-danger"
+                    data-confirm-icono="fas fa-toggle-off"
+                    data-confirm-url="{% url 'products:product_delete' p.pk %}">
+                    <i class="fas fa-toggle-off"></i> Desactivar
+                </a>
+                {% else %}
+                {% if user.profile.es_superowner or not p.prod_desactivado_por or not p.prod_desactivado_por.profile.es_superowner %}
+                <form method="post" action="{% url 'products:product_activate' p.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar">
+                        <i class="fas fa-toggle-on"></i> Reactivar
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -135,56 +168,13 @@
 {% endfor %}
 
 {# Modal de detalle del producto #}
-<div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="productModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold" id="productModalLabel">
-                    <i class="fas fa-utensils"></i> Detalle del producto
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-3" id="modal-image-wrap"></div>
-                <h4 class="mb-1" id="modal-nombre"></h4>
-                <span class="badge mb-3" id="modal-categoria"></span>
-                <p class="text-muted mb-3" id="modal-descripcion"></p>
-                <div class="d-flex justify-content-between align-items-center bg-light rounded p-3">
-                    <div>
-                        <div class="small text-muted text-uppercase">Precio de venta</div>
-                        <div class="h3 mb-0 text-warning font-weight-bold" id="modal-precio"></div>
-                    </div>
-                    <div>
-                        <div class="small text-muted text-uppercase">Estado</div>
-                        <div id="modal-estado"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-center">
-                <a href="#" id="modal-btn-editar" class="btn btn-primary">
-                    <i class="fas fa-pencil-alt"></i> Editar
-                </a>
-                <a href="#" id="modal-btn-desactivar" class="btn btn-outline-danger btn-confirm">
-                    <i class="fas fa-toggle-off"></i> Desactivar
-                </a>
-                <form method="post" action="" id="modal-form-activar" class="m-0 d-none">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-toggle-on"></i> Reactivar
-                    </button>
-                </form>
-                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-                    <i class="fas fa-times"></i> Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'products/includes/product_detail_modal.html' %}
+
+{% include 'users/includes/modal_bloqueo_dueno.html' %}
 
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{% static 'products/js/product_list.js' %}"></script>
+<script src="{% static 'users/js/bloqueos_dueno.js' %}"></script>
 {% endblock %}

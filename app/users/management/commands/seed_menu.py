@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from app.orders.models import OrderItem
-from app.products.models import Category, Product
+from app.products.models import Category, Product, normalizar_nombre_catalogo
 
 
 # Las 9 categorías del menú, en el orden en que aparecen
@@ -265,10 +265,10 @@ class Command(BaseCommand):
             # Los productos referenciados por pedidos no se pueden borrar
             # (on_delete=PROTECT): se desactivan para no romper tickets históricos.
             referenciados = list(
-                OrderItem.objects.values_list('producto_id', flat=True).distinct()
+                OrderItem.objects.values_list('deta_producto_id', flat=True).distinct()
             )
             Product.objects.exclude(pk__in=referenciados).delete()
-            n_conservados = Product.objects.filter(pk__in=referenciados).update(activo=False)
+            n_conservados = Product.objects.filter(pk__in=referenciados).update(prod_active=False)
             if n_conservados:
                 self.stdout.write(self.style.WARNING(
                     f'  {n_conservados} producto(s) en pedidos conservados e inactivados.'
@@ -279,12 +279,12 @@ class Command(BaseCommand):
         cats = {}
         for c in CATEGORIAS:
             cat, created = Category.objects.update_or_create(
-                nombre=c['nombre'],
+                cate_nombre=normalizar_nombre_catalogo(c['nombre']),
                 defaults={
-                    'icono': c['icono'],
-                    'color': c['color'],
-                    'orden': c['orden'],
-                    'activa': True,
+                    'cate_icono': c['icono'],
+                    'cate_color': c['color'],
+                    'cate_orden': c['orden'],
+                    'cate_active': True,
                 },
             )
             cats[c['nombre']] = cat
@@ -304,12 +304,12 @@ class Command(BaseCommand):
                     ))
                     continue
                 prod, created = Product.objects.update_or_create(
-                    nombre=nombre,
+                    prod_nombre=normalizar_nombre_catalogo(nombre),
                     defaults={
-                        'categoria': cat,
-                        'precio': Decimal(precio),
-                        'descripcion': desc,
-                        'activo': True,
+                        'prod_categoria': cat,
+                        'prod_precio': Decimal(precio),
+                        'prod_descripcion': desc,
+                        'prod_active': True,
                     },
                 )
                 if created:

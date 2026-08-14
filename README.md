@@ -44,7 +44,8 @@ Toda la configuración sensible se lee de variables de entorno o de `.env`
 - `DEBUG=False`
 - `ALLOWED_HOSTS` con el dominio real.
 
-Base de datos: SQLite por defecto; PostgreSQL con `USE_POSTGRES=True`.
+Base de datos: PostgreSQL (obligatoria), configuración vía `DATABASE_URL`
+o variables `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
 
 ## Roles
 

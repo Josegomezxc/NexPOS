@@ -16,11 +16,11 @@ class Command(BaseCommand):
     help = 'Cambia la contraseña del superowner.'
 
     def handle(self, *args, **options):
-        profile = Profile.objects.filter(rol=Profile.ROL_SUPEROWNER).select_related('user').first()
+        profile = Profile.objects.filter(perf_rol=Profile.ROL_SUPEROWNER).select_related('perf_usuario').first()
         if not profile:
             raise CommandError('No existe ningún superowner. Ejecutá primero: python manage.py crear_superowner')
 
-        self.stdout.write(f'Cambiando contraseña del superowner: "{profile.user.username}"')
+        self.stdout.write(f'Cambiando contraseña del superowner: "{profile.perf_usuario.username}"')
 
         password = getpass.getpass('Nueva contraseña: ')
         confirm = getpass.getpass('Confirmar contraseña: ')
@@ -30,7 +30,7 @@ class Command(BaseCommand):
         if len(password) < 10:
             raise CommandError('La contraseña debe tener al menos 10 caracteres.')
 
-        profile.user.set_password(password)
-        profile.user.save()
+        profile.perf_usuario.set_password(password)
+        profile.perf_usuario.save()
 
         self.stdout.write(self.style.SUCCESS('✓ Contraseña actualizada correctamente.'))

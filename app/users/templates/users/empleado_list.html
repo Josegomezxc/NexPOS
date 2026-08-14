@@ -62,16 +62,26 @@
         data-activo="{% if emp.is_active %}1{% else %}0{% endif %}"
         data-is-self="{% if emp.pk == user.pk %}1{% else %}0{% endif %}"
         data-joined="{{ emp.date_joined|date:'d/m/Y' }}"
+        {% if user.profile.es_superowner or not emp.profile.perf_desactivado_por or not emp.profile.perf_desactivado_por.profile.es_superowner %}
         data-edit-url="{% url 'users:empleado_update' emp.pk %}"
+        {% endif %}
         data-delete-url="{% url 'users:empleado_delete' emp.pk %}"
         data-activate-url="{% url 'users:empleado_activate' emp.pk %}"
+        {% if emp.profile.perf_desactivado_por.profile.es_superowner %}
+        data-bloqueo-dueno="1"
+        data-tipo="Usuario"
+        data-dueno="{{ emp.profile.perf_desactivado_por.get_full_name|default:emp.profile.perf_desactivado_por.username }}"
+        data-fecha="{{ emp.profile.perf_desactivado_fecha|date:'d/m/Y H:i' }}"
+        {% endif %}
         tabindex="0" role="button" aria-label="Ver detalles de {{ emp.username }}">
         
         <div class="empleado-card-header">
             {% if emp.is_active %}
-                <span class="badge badge-success empleado-status-badge">Activo</span>
+                <span class="badge badge-success empleado-status-badge"><i class="fas fa-circle text-success mr-1"></i>Activo</span>
             {% else %}
-                <span class="badge badge-danger empleado-status-badge">Inactivo</span>
+                <span class="badge badge-danger empleado-status-badge">
+                    <i class="fas fa-lock mr-1"></i>Inactivo
+                </span>
             {% endif %}
 
             <div class="empleado-avatar {% if emp.profile.es_admin %}avatar-admin{% else %}avatar-empleado{% endif %}">
@@ -104,9 +114,11 @@
         </div>
 
         <div class="empleado-card-footer justify-content-center">
+            {% if user.profile.es_superowner or not emp.profile.perf_desactivado_por or not emp.profile.perf_desactivado_por.profile.es_superowner %}
             <a href="{% url 'users:empleado_update' emp.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
                 <i class="fas fa-pencil-alt"></i> Editar
             </a>
+            {% endif %}
             {% if emp.pk != user.pk %}
                 {% if emp.is_active %}
                     <a href="{% url 'users:empleado_delete' emp.pk %}" class="btn btn-sm btn-danger btn-confirm"
@@ -120,12 +132,14 @@
                         <i class="fas fa-user-slash"></i> Desactivar
                     </a>
                 {% else %}
+                    {% if user.profile.es_superowner or not emp.profile.perf_desactivado_por or not emp.profile.perf_desactivado_por.profile.es_superowner %}
                     <form method="post" action="{% url 'users:empleado_activate' emp.pk %}" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-success" title="Reactivar">
                             <i class="fas fa-user-check"></i> Reactivar
                         </button>
                     </form>
+                    {% endif %}
                 {% endif %}
             {% endif %}
         </div>
@@ -197,8 +211,11 @@
         </div>
     </div>
 </div>
+{% include 'users/includes/modal_bloqueo_dueno.html' %}
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{% static 'users/js/empleado_list.js' %}"></script>
+<script src="{% static 'users/js/bloqueos_dueno.js' %}"></script>
 {% endblock %}

@@ -40,7 +40,9 @@
                                 </p>
                             </div>
                             <div class="mb-2 mb-md-0">
-                                {% if profile.es_admin %}
+                                {% if profile.perf_rol == 'superowner' %}
+                                    <span class="badge badge-warning px-3 py-2 font-size-sm shadow-sm"><i class="fas fa-crown"></i> Superowner</span>
+                                {% elif profile.es_admin %}
                                     <span class="badge badge-primary px-3 py-2 font-size-sm shadow-sm"><i class="fas fa-user-shield"></i> Administrador</span>
                                 {% else %}
                                     <span class="badge badge-info px-3 py-2 font-size-sm shadow-sm"><i class="fas fa-user-tag"></i> Empleado</span>
@@ -72,7 +74,7 @@
         </div>
 
         {# Formularios de Edición de Perfil #}
-        <form method="post" novalidate>
+        <form method="post" novalidate data-guardar-cambios="1">
             {% csrf_token %}
             <div class="row">
                 {# Columna Izquierda: Credenciales de Acceso #}

@@ -65,7 +65,7 @@ class EmpleadoCreateForm(forms.Form):
         required=False,
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'ejemplo@correo.com'}),
     )
-    rol = forms.ChoiceField(
+    perf_rol = forms.ChoiceField(
         choices=[
             (Profile.ROL_EMPLEADO, 'Empleado'),
             (Profile.ROL_ADMIN, 'Administrador'),
@@ -98,7 +98,7 @@ class EmpleadoCreateForm(forms.Form):
     def save(self):
         username = self.cleaned_data['username']
         password = self.cleaned_data['password']
-        rol = self.cleaned_data['rol']
+        perf_rol = self.cleaned_data['perf_rol']
 
         user = User.objects.create_user(
             username=username,
@@ -108,7 +108,7 @@ class EmpleadoCreateForm(forms.Form):
             email=self.cleaned_data.get('email', ''),
         )
         profile = user.profile
-        profile.perf_rol = rol
+        profile.perf_rol = perf_rol
         profile.save()
         return user
 
@@ -127,7 +127,7 @@ class EmpleadoEditForm(forms.ModelForm):
         }),
         help_text='Toca el ojito para ver la contraseña que escribas. Dejá en blanco si no querés cambiarla.',
     )
-    rol = forms.ChoiceField(
+    perf_rol = forms.ChoiceField(
         choices=[
             (Profile.ROL_EMPLEADO, 'Empleado'),
             (Profile.ROL_ADMIN, 'Administrador'),
@@ -159,7 +159,7 @@ class EmpleadoEditForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             profile = getattr(self.instance, 'profile', None)
             if profile:
-                self.fields['rol'].initial = profile.perf_rol
+                self.fields['perf_rol'].initial = profile.perf_rol
 
     def clean_username(self):
         username = self.cleaned_data['username'].strip()
@@ -188,7 +188,7 @@ class EmpleadoEditForm(forms.ModelForm):
             user.set_password(password)
             user.save()
         profile = user.profile
-        profile.perf_rol = self.cleaned_data['rol']
+        profile.perf_rol = self.cleaned_data['perf_rol']
         profile.perf_active = user.is_active
         if commit:
             profile.save()

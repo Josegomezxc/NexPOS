@@ -1,0 +1,88 @@
+/* ---- Bandeja de entrada: tabla mejorada ---- */
+
+.avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.avatar-circle-xs {
+  width: 30px;
+  height: 30px;
+  font-size: 0.8rem;
+}
+
+.min-width-0 {
+  min-width: 0;
+}
+
+.mensaje-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 480px;
+}
+
+@media (max-width: 767px) {
+  .mensaje-truncate {
+    max-width: 52vw;
+  }
+}
+
+/* Fila con entrega sin leer para el usuario actual */
+.table-row-nuevo td {
+  background: #fff7f7;
+  border-left: 4px solid #dc3545;
+}
+
+.table-row-nuevo:hover td {
+  background: #ffecec;
+}
+
+/* ---- Separador de día ---- */
+
+.day-group-header td {
+  background: #f3f4f6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ---- Chips de tipo ---- */
+
+.chip-tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip-tipo-amber {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.chip-tipo-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.chip-tipo-purple {
+  background: #ede9fe;
+  color: #6d28d9;
+}

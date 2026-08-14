@@ -52,6 +52,13 @@
 
   function abrirModal(card) {
     const d = card.dataset;
+    // Card bloqueada por el dueño: solo el modal del superowner, sin detalle normal
+    if (d.bloqueoDueno === '1') {
+      if (typeof window.abrirModalBloqueoDueno === 'function') {
+        window.abrirModalBloqueoDueno(card);
+      }
+      return;
+    }
     $name.textContent = d.nombre;
     $username.textContent = '@' + d.username;
     $email.textContent = d.email || 'Sin correo asignado';

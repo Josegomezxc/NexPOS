@@ -5,6 +5,24 @@
 (function () {
   'use strict';
 
+  // Categoría con productos bloqueados por el superowner: el admin ve el
+  // popup con los nombres en vez del confirm de desactivación.
+  // Se registra ANTES de verificar el modal de detalle: no depende de él.
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.btn-bloqueo-categoria');
+    if (!btn) return;
+    e.preventDefault();
+    const nombres = btn.getAttribute('data-bloqueado-nombres') || '';
+    const el = document.getElementById('md-bloqueo-categoria-nombres');
+    if (el) el.textContent = nombres;
+    if (typeof jQuery !== 'undefined') {
+      if (document.getElementById('categoryModal')) {
+        jQuery('#categoryModal').modal('hide');
+      }
+      jQuery('#modalBloqueoCategoria').modal('show');
+    }
+  });
+
   const $modalEl = document.getElementById('categoryModal');
   if (!$modalEl) return;
 
@@ -33,6 +51,13 @@
 
   function abrirModal(card) {
     const d = card.dataset;
+    // Card bloqueada por el dueño: solo el modal del superowner, sin detalle normal
+    if (d.bloqueoDueno === '1') {
+      if (typeof window.abrirModalBloqueoDueno === 'function') {
+        window.abrirModalBloqueoDueno(card);
+      }
+      return;
+    }
     $nombre.textContent = d.nombre;
     $desc.textContent = d.descripcion || 'Sin descripción.';
     $count.textContent = d.count + (d.count === '1' ? ' producto' : ' productos');
@@ -49,12 +74,21 @@
     if (activa) {
       $estado.innerHTML = '<span class="badge badge-success badge-pill">Activa</span>';
       $btnDes.classList.remove('d-none');
-      $btnDes.dataset.confirmUrl = d.deleteUrl;
-      $btnDes.dataset.confirm = '¿Desactivar la categoría ' + d.nombre + '? No aparecerá en el menú y sus productos se desactivan.';
-      $btnDes.dataset.confirmTitulo = '¿Desactivar categoría?';
-      $btnDes.dataset.confirmBoton = 'Sí, desactivar';
-      $btnDes.dataset.confirmClase = 'btn-danger';
-      $btnDes.dataset.confirmIcono = 'fas fa-toggle-off';
+      if (d.bloqueoCategoria === '1') {
+        $btnDes.classList.add('btn-bloqueo-categoria');
+        $btnDes.classList.remove('btn-confirm');
+        $btnDes.setAttribute('data-bloqueado-nombres', d.bloqueadoNombres || '');
+      } else {
+        $btnDes.classList.add('btn-confirm');
+        $btnDes.classList.remove('btn-bloqueo-categoria');
+        $btnDes.removeAttribute('data-bloqueado-nombres');
+        $btnDes.dataset.confirmUrl = d.deleteUrl;
+        $btnDes.dataset.confirm = '¿Desactivar la categoría ' + d.nombre + '? No aparecerá en el menú y sus productos se desactivan.';
+        $btnDes.dataset.confirmTitulo = '¿Desactivar categoría?';
+        $btnDes.dataset.confirmBoton = 'Sí, desactivar';
+        $btnDes.dataset.confirmClase = 'btn-danger';
+        $btnDes.dataset.confirmIcono = 'fas fa-toggle-off';
+      }
       $formAct.classList.add('d-none');
     } else {
       $estado.innerHTML = '<span class="badge badge-secondary badge-pill">Inactiva</span>';

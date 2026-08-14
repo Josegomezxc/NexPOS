@@ -37,9 +37,21 @@
         data-activa="{{ c.cate_active|yesno:'1,0' }}"
         data-count="{{ c.productos.count }}"
         data-imagen="{% if c.cate_imagen %}{{ c.cate_imagen.url }}{% endif %}"
+        {% if user.profile.es_superowner or not c.cate_desactivado_por or not c.cate_desactivado_por.profile.es_superowner %}
         data-edit-url="{% url 'products:category_update' c.pk %}"
+        {% endif %}
         data-delete-url="{% url 'products:category_delete' c.pk %}"
         data-activate-url="{% url 'products:category_activate' c.pk %}"
+        {% if c.productos_bloqueados and not user.profile.es_superowner %}
+        data-bloqueo-categoria="1"
+        data-bloqueado-nombres="{{ c.productos_bloqueados|join:', ' }}"
+        {% endif %}
+        {% if c.cate_desactivado_por.profile.es_superowner %}
+        data-bloqueo-dueno="1"
+        data-tipo="Categoría"
+        data-dueno="{{ c.cate_desactivado_por.get_full_name|default:c.cate_desactivado_por.username }}"
+        data-fecha="{{ c.cate_desactivado_fecha|date:'d/m/Y H:i' }}"
+        {% endif %}
         tabindex="0" role="button" aria-label="Ver detalles de {{ c.cate_nombre }}">
         
         <div class="category-card-header">
@@ -52,9 +64,11 @@
             {% endif %}
 
             {% if c.cate_active %}
-                <span class="badge badge-success category-badge-status">Activa</span>
+                <span class="badge badge-success category-badge-status"><i class="fas fa-circle text-success mr-1"></i>Activa</span>
             {% else %}
-                <span class="badge badge-secondary category-badge-status">Inactiva</span>
+                <span class="badge badge-secondary category-badge-status">
+                    <i class="fas fa-lock mr-1"></i>Inactiva
+                </span>
             {% endif %}
 
             <span class="category-badge-count">
@@ -70,10 +84,18 @@
         </div>
 
         <div class="category-card-footer justify-content-center">
+            {% if user.profile.es_superowner or not c.cate_desactivado_por or not c.cate_desactivado_por.profile.es_superowner %}
             <a href="{% url 'products:category_update' c.pk %}" class="btn btn-sm btn-outline-primary mr-2" title="Editar">
                 <i class="fas fa-pencil-alt"></i> Editar
             </a>
+            {% endif %}
             {% if c.cate_active %}
+            {% if c.productos_bloqueados and not user.profile.es_superowner %}
+            <a href="#" class="btn btn-sm btn-danger btn-bloqueo-categoria" title="Desactivar"
+                data-bloqueado-nombres="{{ c.productos_bloqueados|join:', ' }}">
+                <i class="fas fa-toggle-off"></i> Desactivar
+            </a>
+            {% else %}
             <a href="{% url 'products:category_delete' c.pk %}" class="btn btn-sm btn-danger btn-confirm"
                 title="Desactivar"
                 data-confirm-titulo="¿Desactivar categoría?"
@@ -84,13 +106,16 @@
                 data-confirm-url="{% url 'products:category_delete' c.pk %}">
                 <i class="fas fa-toggle-off"></i> Desactivar
             </a>
+            {% endif %}
             {% else %}
+            {% if user.profile.es_superowner or not c.cate_desactivado_por or not c.cate_desactivado_por.profile.es_superowner %}
             <form method="post" action="{% url 'products:category_activate' c.pk %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar">
                     <i class="fas fa-toggle-on"></i> Reactivar
                 </button>
             </form>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -106,49 +131,12 @@
     {% endfor %}
 </div>
 
-{# Modal de detalle de la categoría #}
-<div class="modal fade" id="categoryModal" tabindex="-1" role="dialog" aria-labelledby="categoryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold" id="categoryModalLabel">
-                    <i class="fas fa-tag"></i> Detalle de la categoría
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-3" id="cat-modal-image-wrap"></div>
-                <h4 class="mb-1 text-center font-weight-bold" id="cat-modal-nombre"></h4>
-                <div class="text-center mb-3">
-                    <span id="cat-modal-estado" class="mr-2"></span>
-                    <span class="badge badge-info badge-pill" id="cat-modal-count"></span>
-                </div>
-                <p class="text-muted mb-3 text-center" id="cat-modal-descripcion"></p>
-            </div>
-            <div class="modal-footer justify-content-center">
-                <a href="#" id="cat-modal-btn-editar" class="btn btn-primary">
-                    <i class="fas fa-pencil-alt"></i> Editar
-                </a>
-                <a href="#" id="cat-modal-btn-desactivar" class="btn btn-danger btn-confirm">
-                    <i class="fas fa-toggle-off"></i> Desactivar
-                </a>
-                <form method="post" action="" id="cat-modal-form-activar" class="m-0 d-none">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-toggle-on"></i> Reactivar
-                    </button>
-                </form>
-                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-                    <i class="fas fa-times"></i> Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'products/includes/modal_bloqueo_categoria.html' %}
+{% include 'users/includes/modal_bloqueo_dueno.html' %}
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{% static 'products/js/category_list.js' %}"></script>
+<script src="{% static 'users/js/bloqueos_dueno.js' %}"></script>
 {% endblock %}

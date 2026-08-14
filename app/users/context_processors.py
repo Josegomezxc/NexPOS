@@ -1,5 +1,6 @@
 """Context processors globales."""
 from django.conf import settings
+from django.db.models import Q
 
 
 def business_info(request):
@@ -39,10 +40,29 @@ def topbar_notifs(request):
     else:
         alertas_count = len(alertas)
 
-    # Mensajes: por ahora vacío (lista lista para extender)
+    # Mensajes del sistema (solo admins y superowner; empleado jamás los ve)
+    if es_admin:
+        from app.mensajes.models import Mensaje, MensajeEntrega
+
+        mensajes = list(
+            Mensaje.objects
+            .filter(
+                Q(entregas__destinatario=request.user) | Q(emisor=request.user)
+            )
+            .select_related('emisor')
+            .distinct()
+            .order_by('-creado')[:5]
+        )
+        mensajes_count = MensajeEntrega.objects.filter(
+            destinatario=request.user, leido=False,
+        ).count()
+    else:
+        mensajes = []
+        mensajes_count = 0
+
     return {
         'topbar_alertas_count': alertas_count,
         'topbar_alertas': alertas,
-        'topbar_mensajes_count': 0,
-        'topbar_mensajes': [],
+        'topbar_mensajes_count': mensajes_count,
+        'topbar_mensajes': mensajes,
     }

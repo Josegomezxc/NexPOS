@@ -1,6 +1,7 @@
 """Modelos para el catálogo del local (categorías y productos)."""
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -21,7 +22,7 @@ class Category(models.Model):
 
     id_cate = models.AutoField(primary_key=True)
     cate_nombre = models.CharField(
-        'Nombre', max_length=80, unique=True, db_collation='NOCASE',
+        'Nombre', max_length=80, unique=True,
     )
     cate_slug = models.SlugField('Slug', max_length=90, unique=True, blank=True)
     cate_descripcion = models.TextField('Descripción', blank=True)
@@ -39,6 +40,14 @@ class Category(models.Model):
     )
     cate_orden = models.PositiveIntegerField('Orden', default=0)
     cate_active = models.BooleanField('Activa', default=True)
+    cate_desactivado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='categorias_desactivadas',
+        verbose_name='Desactivada por',
+    )
+    cate_desactivado_fecha = models.DateTimeField(
+        'Desactivada el', null=True, blank=True,
+    )
 
     class Meta:
         verbose_name = 'Categoría'
@@ -79,7 +88,7 @@ class Product(models.Model):
 
     id_prod = models.AutoField(primary_key=True)
     prod_nombre = models.CharField(
-        'Nombre', max_length=140, unique=True, db_collation='NOCASE',
+        'Nombre', max_length=140, unique=True,
     )
     prod_descripcion = models.TextField('Descripción', blank=True)
     prod_categoria = models.ForeignKey(
@@ -95,6 +104,14 @@ class Product(models.Model):
         help_text='Imagen del producto (JPG/PNG).'
     )
     prod_active = models.BooleanField('Activo', default=True, db_index=True)
+    prod_desactivado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='productos_desactivados',
+        verbose_name='Desactivado por',
+    )
+    prod_desactivado_fecha = models.DateTimeField(
+        'Desactivado el', null=True, blank=True,
+    )
     prod_creado = models.DateTimeField('Creado', auto_now_add=True)
     prod_actualizado = models.DateTimeField('Actualizado', auto_now=True)
 

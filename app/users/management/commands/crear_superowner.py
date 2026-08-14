@@ -28,10 +28,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING('\n=== Creación del Propietario del Sistema ===\n'))
 
         # Verificar si ya existe un superowner
-        existing = Profile.objects.filter(rol=Profile.ROL_SUPEROWNER).first()
+        existing = Profile.objects.filter(perf_rol=Profile.ROL_SUPEROWNER).first()
         if existing:
             self.stdout.write(self.style.ERROR(
-                f'Ya existe un superowner: "{existing.user.username}". '
+                f'Ya existe un superowner: "{existing.perf_usuario.username}". '
                 'Solo puede haber uno. Si necesitás cambiar la contraseña, usá:\n'
                 '  python manage.py cambiar_password_superowner'
             ))

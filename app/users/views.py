@@ -24,6 +24,9 @@ from .forms import (
 )
 from .models import Profile
 
+from app.mensajes.models import Mensaje as MensajeSistema
+from app.mensajes.services import crear_mensaje_superowner
+
 
 # ──────────────────────────────────────────────
 # Disponibilidad de usuario (validación en tiempo real)
@@ -331,6 +334,15 @@ def _usuario_es_protegido(usuario):
     return profile and profile.es_superowner
 
 
+def _desactivado_por_superowner(actor):
+    """True si el registro fue desactivado por un superowner (candado del dueño)."""
+    return (
+        actor is not None
+        and getattr(actor, 'profile', None)
+        and actor.profile.es_superowner
+    )
+
+
 class EmpleadoListView(AdminRequiredMixin, ListView):
     model = User
     template_name = 'users/empleado_list.html'
@@ -338,7 +350,9 @@ class EmpleadoListView(AdminRequiredMixin, ListView):
 
     def get_queryset(self):
         # Superowners nunca aparecen en la lista de empleados
-        qs = User.objects.select_related('profile').exclude(
+        qs = User.objects.select_related(
+            'profile', 'profile__perf_desactivado_por',
+        ).exclude(
             profile__perf_rol=Profile.ROL_SUPEROWNER
         ).order_by('-date_joined')
         q = self.request.GET.get('q', '').strip()
@@ -395,6 +409,20 @@ class EmpleadoUpdateView(AdminRequiredMixin, UpdateView):
         if _usuario_es_protegido(usuario):
             messages.error(request, 'Este usuario no puede ser modificado.')
             return redirect('users:empleado_list')
+        # Protección: bloqueado por el dueño -> solo el superowner puede editarlo
+        perfil = getattr(usuario, 'profile', None)
+        if (
+            perfil
+            and _desactivado_por_superowner(perfil.perf_desactivado_por)
+            and not _es_superowner(request.user)
+        ):
+            messages.error(
+                request,
+                f'El usuario "{usuario.username}" fue desactivado por el dueño '
+                'del sistema. Solo el superowner puede editarlo.',
+                extra_tags='permanent',
+            )
+            return redirect('users:empleado_list')
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -403,7 +431,33 @@ class EmpleadoUpdateView(AdminRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
+        usuario = self.get_object()
+        era_activo = usuario.is_active
+        sera_activo = form.cleaned_data.get('is_active')
         response = super().form_valid(form)
+        perfil = getattr(usuario, 'profile', None)
+        if perfil and era_activo != sera_activo:
+            if not sera_activo:
+                perfil.perf_active = False
+                perfil.perf_desactivado_por = self.request.user
+                perfil.perf_desactivado_fecha = timezone.now()
+            else:
+                perfil.perf_active = True
+                perfil.perf_desactivado_por = None
+                perfil.perf_desactivado_fecha = None
+            perfil.save(update_fields=[
+                'perf_active', 'perf_desactivado_por', 'perf_desactivado_fecha',
+            ])
+            crear_mensaje_superowner(
+                self.request.user,
+                MensajeSistema.TIPO_EMPLEADO,
+                (
+                    MensajeSistema.ACCION_DESACTIVO
+                    if not sera_activo else MensajeSistema.ACCION_REACTIVO
+                ),
+                usuario.username,
+                entidad_id=usuario.pk,
+            )
         messages.success(self.request, 'Usuario actualizado correctamente.')
         return response
 
@@ -431,8 +485,18 @@ class EmpleadoDeleteView(AdminRequiredMixin, DetailView):
         usuario.save(update_fields=['is_active'])
         if hasattr(usuario, 'profile'):
             usuario.profile.perf_active = False
-            usuario.profile.save(update_fields=['perf_active'])
-
+            usuario.profile.perf_desactivado_por = request.user
+            usuario.profile.perf_desactivado_fecha = timezone.now()
+            usuario.profile.save(update_fields=[
+                'perf_active', 'perf_desactivado_por', 'perf_desactivado_fecha',
+            ])
+        crear_mensaje_superowner(
+            request.user,
+            MensajeSistema.TIPO_EMPLEADO,
+            MensajeSistema.ACCION_DESACTIVO,
+            usuario.username,
+            entidad_id=usuario.pk,
+        )
         messages.success(
             request,
             f'Usuario "{usuario.username}" desactivado. Su historial se conserva.',
@@ -449,11 +513,35 @@ class EmpleadoActivateView(AdminRequiredMixin, DetailView):
         if _usuario_es_protegido(usuario):
             messages.error(request, 'Este usuario no puede ser modificado.')
             return redirect('users:empleado_list')
+        perfil = getattr(usuario, 'profile', None)
+        if (
+            perfil
+            and _desactivado_por_superowner(perfil.perf_desactivado_por)
+            and not _es_superowner(request.user)
+        ):
+            messages.error(
+                request,
+                f'El usuario "{usuario.username}" fue desactivado por el dueño '
+                'del sistema. Solo el superowner puede reactivarlo.',
+                extra_tags='permanent',
+            )
+            return redirect('users:empleado_list')
         usuario.is_active = True
         usuario.save(update_fields=['is_active'])
-        if hasattr(usuario, 'profile'):
-            usuario.profile.perf_active = True
-            usuario.profile.save(update_fields=['perf_active'])
+        if perfil:
+            perfil.perf_active = True
+            perfil.perf_desactivado_por = None
+            perfil.perf_desactivado_fecha = None
+            perfil.save(update_fields=[
+                'perf_active', 'perf_desactivado_por', 'perf_desactivado_fecha',
+            ])
+        crear_mensaje_superowner(
+            request.user,
+            MensajeSistema.TIPO_EMPLEADO,
+            MensajeSistema.ACCION_REACTIVO,
+            usuario.username,
+            entidad_id=usuario.pk,
+        )
         messages.success(request, f'Usuario "{usuario.username}" reactivado.')
         return redirect('users:empleado_list')
 

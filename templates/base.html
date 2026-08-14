@@ -122,6 +122,13 @@
                     <span>Empleados</span>
                 </a>
             </li>
+
+            <li class="nav-item {% if current_ns == 'mensajes' %}active{% endif %}">
+                <a class="nav-link" href="{% url 'mensajes:list' %}" {% if current_ns == 'mensajes' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-fw fa-envelope-open-text" aria-hidden="true"></i>
+                    <span>Mensajes</span>
+                </a>
+            </li>
             {% endif %}
             {% endwith %}
 
@@ -217,7 +224,8 @@
                         </div>
                     </li>
 
-                    {# Mensajes — placeholder (sin lógica real todavía) #}
+                    {# Mensajes del superowner (solo admins y superowner) #}
+                    {% if request.user.profile.es_admin %}
                     <li class="nav-item dropdown no-arrow mx-1">
                         <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Mensajes">
@@ -228,12 +236,36 @@
                         </a>
                         <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="messagesDropdown">
                             <h3 class="dropdown-header">Mensajes</h3>
+                            {% for m in topbar_mensajes %}
+                            <a class="dropdown-item d-flex align-items-center" href="{% url 'mensajes:detail' m.pk %}">
+                                <div class="mr-3">
+                                    {% if m.accion == 'desactivo' %}
+                                    <div class="icon-circle bg-danger">
+                                        <i class="fas fa-user-slash text-white" aria-hidden="true"></i>
+                                    </div>
+                                    {% else %}
+                                    <div class="icon-circle bg-success">
+                                        <i class="fas fa-user-check text-white" aria-hidden="true"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">{{ m.creado|date:"d M Y · H:i" }}</div>
+                                    <span class="font-weight-bold">{{ m.texto|truncatechars:60 }}</span>
+                                </div>
+                            </a>
+                            {% empty %}
                             <div class="dropdown-item text-center small text-gray-500 py-3">
                                 <i class="fas fa-inbox text-muted" aria-hidden="true"></i>
                                 No tenés mensajes nuevos
                             </div>
+                            {% endfor %}
+                            <a class="dropdown-item text-center small text-gray-500" href="{% url 'mensajes:list' %}">
+                                Ver todos los mensajes
+                            </a>
                         </div>
                     </li>
+                    {% endif %}
 
                     <div class="topbar-divider d-none d-sm-block" aria-hidden="true"></div>
 
@@ -244,7 +276,7 @@
                             <span class="mr-2 d-none d-lg-inline text-gray-600 small">
                                 {{ request.user.get_full_name|default:request.user.username }}
                                 <span class="badge badge-warning ml-1">
-                                    {% if request.user.is_superuser or request.user.profile.es_admin %}Admin{% else %}Empl.{% endif %}
+                                    {% if request.user.profile.perf_rol == 'superowner' %}Superowner{% elif request.user.is_superuser or request.user.profile.es_admin %}Admin{% else %}Empl.{% endif %}
                                 </span>
                             </span>
                             <i class="fas fa-user-circle fa-2x text-gray-400" aria-hidden="true"></i>
@@ -369,6 +401,9 @@ al resize <480px que abría el menú al hacer scroll en mobile)
 
 {# Validación de formularios en tiempo real (se activa sola con [data-validar]) #}
 <script src="{% static 'users/js/validacion.js' %}"></script>
+
+{# Guardar cambios: deshabilita el botón si el form no fue modificado (data-guardar-cambios) #}
+<script src="{% static 'users/js/guardar-cambios.js' %}"></script>
 
 {# Ver/ocultar contraseña (se activa sola con [data-toggle-password]) #}
 <script src="{% static 'users/js/toggle-password.js' %}"></script>

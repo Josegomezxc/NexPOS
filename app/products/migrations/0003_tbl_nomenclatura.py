@@ -3,7 +3,7 @@
 - tbl_categorias (cate_*), tbl_productos (prod_*)
 - activa/activo -> cate_active / prod_active
 - nombres normalizados a sentence case
-- prod_nombre y cate_nombre únicos con collation NOCASE
+- prod_nombre y cate_nombre únicos
 """
 from django.db import migrations, models
 
@@ -29,8 +29,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Índice viejo primero: sqlite reconstruye la tabla en cada rename
-        # y no debe intentar recrear índices con campos ya renombrados.
+        # Índice viejo primero: evitar recrear índices con campos ya
+        # renombrados.
         migrations.RemoveIndex(
             'Product', name='products_pr_activo_1a45f6_idx',
         ),
@@ -65,18 +65,18 @@ class Migration(migrations.Migration):
             models.Index(fields=['prod_active', 'prod_categoria'], name='products_pr_activ_1234ab_idx'),
         ),
 
-        # Normalizar nombres existentes ANTES de agregar el unique NOCASE
+        # Normalizar nombres existentes ANTES de agregar el unique
         migrations.RunPython(normalizar_nombres, migrations.RunPython.noop),
 
-        # Uniqueness case-insensitive (NOCASE) en los nombres
+        # Uniqueness en los nombres
         migrations.AlterField(
             'Category',
             'cate_nombre',
-            models.CharField(max_length=80, unique=True, db_collation='NOCASE', verbose_name='Nombre'),
+            models.CharField(max_length=80, unique=True, verbose_name='Nombre'),
         ),
         migrations.AlterField(
             'Product',
             'prod_nombre',
-            models.CharField(max_length=140, unique=True, db_collation='NOCASE', verbose_name='Nombre'),
+            models.CharField(max_length=140, unique=True, verbose_name='Nombre'),
         ),
     ]

@@ -31,7 +31,7 @@
                 </h2>
             </div>
             
-            <form method="post" enctype="multipart/form-data" novalidate>
+            <form method="post" enctype="multipart/form-data" novalidate{% if object %} data-guardar-cambios="1"{% endif %}>
                 {% csrf_token %}
                 <div class="card-body p-4">
                     {% if form.non_field_errors %}
@@ -140,4 +140,30 @@
         </div>
     </div>
 </div>
+
+{% if object and productos_bloqueados_json %}
+{% include 'products/includes/modal_bloqueo_categoria.html' %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if object and productos_bloqueados_json %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var nombres = {{ productos_bloqueados_json|safe }};
+    var esSuperowner = {{ es_superowner|yesno:'true,false' }};
+    var check = document.getElementById('{{ form.cate_active.id_for_label }}');
+    if (!check || !nombres.length || esSuperowner) return;
+    var form = check.closest('form');
+    if (!form || typeof jQuery === 'undefined') return;
+    form.addEventListener('submit', function (e) {
+        if (check.checked) return;
+        e.preventDefault();
+        var el = document.getElementById('md-bloqueo-categoria-nombres');
+        if (el) el.textContent = nombres.join(', ');
+        jQuery('#modalBloqueoCategoria').modal('show');
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

@@ -14,8 +14,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Índices viejos primero: sqlite reconstruye la tabla en cada
-        # rename y no debe intentar recrear índices con campos ya renombrados.
+        # Índices viejos primero: evitar recrear índices con campos ya
+        # renombrados.
         migrations.RemoveIndex('Order', name='orders_orde_estado_29bc84_idx'),
         migrations.RemoveIndex('Order', name='orders_orde_vendedo_ada4be_idx'),
         migrations.RemoveConstraint('Cliente', name='uniq_cliente_tipo_identificacion'),

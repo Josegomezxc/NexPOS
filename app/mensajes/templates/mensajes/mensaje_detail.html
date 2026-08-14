@@ -1,0 +1,467 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mensaje #{{ mensaje.pk }} - {{ NEGOCIO_NOMBRE }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'mensajes/css/mensaje_detail.css' %}">
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'mensajes:list' %}">Mensajes</a></li>
+<li class="breadcrumb-item active">#{{ mensaje.pk }}</li>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero" aria-label="Cabecera del mensaje">
+    <h1><i class="fas fa-envelope-open-text"></i> Mensaje #{{ mensaje.pk }}</h1>
+    <p class="lead">
+        {{ mensaje.get_accion_display }}
+        {% if mensaje.tipo == mensaje.TIPO_CATEGORIA %}la{% else %}el{% endif %}
+        {{ mensaje.get_tipo_display|lower }} "<strong>{{ mensaje.entidad_nombre }}</strong>" ·
+        Creado el {{ mensaje.creado|date:"l j \d\e F \d\e Y · H:i" }} hrs por
+        {{ mensaje.emisor.get_full_name|default:mensaje.emisor.username }}
+    </p>
+    <div class="hero-actions">
+        {% if es_emisor and es_superowner %}
+        <a href="{% url 'mensajes:edit' mensaje.pk %}" class="btn">
+            <i class="fas fa-pencil-alt"></i> Editar texto
+        </a>
+        <button type="button" class="btn btn-danger btn-confirm" data-confirm-target="#modalEliminarMensaje">
+            <i class="fas fa-trash-alt"></i> Eliminar
+        </button>
+        {% endif %}
+        <a href="{% url 'mensajes:list' %}" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i> Volver a Mensajes
+        </a>
+    </div>
+</section>
+
+<div class="row">
+    {% if es_superowner %}
+    <div class="col-12 mb-4">
+        <div class="card modern-card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-eye text-primary mr-1"></i> Estado del Mensaje
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="estado-stepper d-flex align-items-center mb-4">
+                    <div class="estado-step text-center">
+                        <div class="estado-step-circle estado-step-done">
+                            <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
+                        </div>
+                        <div class="estado-step-label font-weight-bold">Mensaje generado</div>
+                        <small class="text-muted">
+                            por {{ mensaje.emisor.get_full_name|default:mensaje.emisor.username }} ·
+                            {{ mensaje.creado|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+
+                    <div class="estado-step-line {% if mensaje.visto_por_admin %}estado-step-line-done{% endif %}"></div>
+
+                    <div class="estado-step text-center {% if not mensaje.visto_por_admin %}estado-step-pending{% endif %}">
+                        <div class="estado-step-circle {% if mensaje.visto_por_admin %}estado-step-done{% else %}estado-step-waiting{% endif %}">
+                            {% if mensaje.visto_por_admin %}
+                            <i class="fas fa-check" aria-hidden="true"></i>
+                            {% else %}
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                            {% endif %}
+                        </div>
+                        <div class="estado-step-label font-weight-bold">Visto por el admin</div>
+                        <small class="text-muted">
+                            {% if mensaje.visto_por_admin and visto_en %}
+                            Visto el {{ visto_en|date:"d/m/Y H:i" }}
+                            {% else %}
+                            Sin leer todavía
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="estado-banner rounded p-3 d-flex align-items-center {% if mensaje.visto_por_admin %}estado-banner-ok{% else %}estado-banner-pending{% endif %}">
+                    <div class="mr-3">
+                        {% if mensaje.visto_por_admin %}
+                        <i class="fas fa-check-double fa-2x text-success" aria-hidden="true"></i>
+                        {% else %}
+                        <i class="fas fa-check-circle fa-2x text-gray-500" aria-hidden="true"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="font-weight-bold text-dark">
+                            {% if mensaje.visto_por_admin %}
+                            El admin ya vio tu mensaje
+                            {% else %}
+                            El admin todavía no vio tu mensaje
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">
+                            {% if mensaje.visto_por_admin and visto_en %}
+                            Confirmado el {{ visto_en|date:"d/m/Y H:i" }}
+                            {% else %}
+                            Se actualiza automáticamente cuando lo abra
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <p class="small text-muted mb-0 mt-3">
+                    <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>
+                    El visto del mensaje pasa de gris
+                    (<i class="fas fa-check-circle text-gray-500" aria-hidden="true"></i>)
+                    a verde
+                    (<i class="fas fa-check-circle text-success" aria-hidden="true"></i>)
+                    solo cuando un admin lo abre. Ver tu propio mensaje no cuenta
+                    como segundo visto.
+                </p>
+            </div>
+
+            {% if es_emisor %}
+            <div class="card-footer bg-white d-flex flex-wrap">
+                <a href="{% url 'mensajes:edit' mensaje.pk %}" class="btn btn-primary font-weight-bold mr-2 mb-2">
+                    <i class="fas fa-pencil-alt mr-1"></i> Editar texto
+                </a>
+                <button type="button" class="btn btn-outline-danger btn-confirm mb-2"
+                    data-confirm-target="#modalEliminarMensaje">
+                    <i class="fas fa-trash-alt"></i> Eliminar mensaje
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Mensaje completo #}
+    <div class="col-12 mb-4">
+        <div class="card modern-card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-white py-3 d-flex flex-wrap align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-primary text-white mr-3">
+                        {{ mensaje.emisor.get_full_name|default:mensaje.emisor.username|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h2 class="h6 m-0 font-weight-bold text-dark">
+                            {{ mensaje.emisor.get_full_name|default:mensaje.emisor.username }}
+                            <span class="badge badge-warning ml-1">Superowner</span>
+                        </h2>
+                        <small class="text-muted">@{{ mensaje.emisor.username }} · {{ mensaje.creado|date:"d M Y · H:i" }}</small>
+                    </div>
+                </div>
+                <div class="text-md-right mt-2 mt-md-0">
+                    <small class="text-uppercase text-muted font-weight-bold d-block mb-1">Mensaje del superowner</small>
+                    {% if mensaje.accion == mensaje.ACCION_DESACTIVO %}
+                    <span class="badge badge-danger px-3 py-2 font-size-sm"><i class="fas fa-user-slash"></i> Desactivó</span>
+                    {% else %}
+                    <span class="badge badge-success px-3 py-2 font-size-sm"><i class="fas fa-user-check"></i> Reactivó</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-center mb-3">
+                    <span class="badge badge-info px-3 py-2 font-size-sm mr-2 mb-1">
+                        <i class="fas fa-tag mr-1" aria-hidden="true"></i> {{ mensaje.get_tipo_display }}
+                    </span>
+                    <span class="font-weight-bold text-dark mr-2 mb-1">
+                        <i class="fas fa-box text-muted mr-1" aria-hidden="true"></i> {{ mensaje.entidad_nombre }}
+                    </span>
+                    {% if mensaje.entidad_id %}
+                    <small class="text-muted mb-1">(#{{ mensaje.entidad_id }})</small>
+                    {% endif %}
+                </div>
+                <blockquote class="mensaje-blockquote bg-light rounded p-4 mb-0">
+                    <i class="fas fa-envelope-open-text text-primary d-block mb-2" aria-hidden="true"></i>
+                    <p class="mensaje-texto mb-0">{{ mensaje.texto }}</p>
+                </blockquote>
+            </div>
+            <div class="card-footer bg-white d-flex flex-wrap align-items-center justify-content-between py-2">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>
+                    Aviso automático generado al
+                    {% if mensaje.accion == mensaje.ACCION_DESACTIVO %}desactivar{% else %}reactivar{% endif %}
+                    {% if mensaje.tipo == mensaje.TIPO_CATEGORIA %}la{% else %}el{% endif %}
+                    {{ mensaje.get_tipo_display|lower }} "{{ mensaje.entidad_nombre }}"
+                </small>
+                {% if entidad_producto %}
+                <a href="{% url 'products:product_list' %}?detalle={{ entidad_producto.pk }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt mr-1"></i> Ver producto
+                </a>
+                {% elif mensaje.tipo == mensaje.TIPO_PRODUCTO %}
+                <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#productoNoDisponibleModal">
+                    <i class="fas fa-external-link-alt mr-1"></i> Ver producto
+                </button>
+                {% elif entidad_url %}
+                <a href="{{ entidad_url }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt mr-1"></i> Ver {{ mensaje.get_tipo_display|lower }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card modern-card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-list-alt text-primary mr-1"></i> Detalles del Mensaje
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="row detalle-grid">
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon detalle-icon-blue">
+                                <i class="fas fa-user" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <small class="detalle-label">Emisor</small>
+                                <div class="font-weight-bold text-dark">{{ mensaje.emisor.get_full_name|default:mensaje.emisor.username }}</div>
+                                {% if es_emisor %}
+                                <small class="text-muted">Tú generaste este aviso</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon
+                                {% if mensaje.tipo == mensaje.TIPO_PRODUCTO %}detalle-icon-amber
+                                {% elif mensaje.tipo == mensaje.TIPO_CATEGORIA %}detalle-icon-blue
+                                {% else %}detalle-icon-purple{% endif %}">
+                                {% if mensaje.tipo == mensaje.TIPO_PRODUCTO %}
+                                <i class="fas fa-hamburger" aria-hidden="true"></i>
+                                {% elif mensaje.tipo == mensaje.TIPO_CATEGORIA %}
+                                <i class="fas fa-tags" aria-hidden="true"></i>
+                                {% else %}
+                                <i class="fas fa-user-tie" aria-hidden="true"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <small class="detalle-label">Tipo</small>
+                                <span class="badge badge-info">{{ mensaje.get_tipo_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon
+                                {% if mensaje.accion == mensaje.ACCION_DESACTIVO %}detalle-icon-red{% else %}detalle-icon-green{% endif %}">
+                                {% if mensaje.accion == mensaje.ACCION_DESACTIVO %}
+                                <i class="fas fa-user-slash" aria-hidden="true"></i>
+                                {% else %}
+                                <i class="fas fa-user-check" aria-hidden="true"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <small class="detalle-label">Acción</small>
+                                {% if mensaje.accion == mensaje.ACCION_DESACTIVO %}
+                                <span class="badge badge-danger">{{ mensaje.get_accion_display }}</span>
+                                {% else %}
+                                <span class="badge badge-success">{{ mensaje.get_accion_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon detalle-icon-purple">
+                                <i class="fas fa-box" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <small class="detalle-label">Entidad</small>
+                                <div class="font-weight-bold text-dark">{{ mensaje.entidad_nombre }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon detalle-icon-green">
+                                <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <small class="detalle-label">Creado</small>
+                                <div>{{ mensaje.creado|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon detalle-icon-blue">
+                                <i class="fas fa-pen" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <small class="detalle-label">Última edición</small>
+                                <div>
+                                    {% if mensaje.editado|date:'U' != mensaje.creado|date:'U' %}
+                                    {{ mensaje.editado|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                    Sin ediciones
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if es_superowner %}
+                    <div class="col-12 col-md-6">
+                        <div class="detalle-tile">
+                            <div class="detalle-icon {% if mensaje.visto_por_admin %}detalle-icon-green{% else %}detalle-icon-gray{% endif %}">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                            </div>
+                            <div>
+                                <small class="detalle-label">Estado</small>
+                                {% if mensaje.visto_por_admin %}
+                                <span class="text-success"><i class="fas fa-check-circle" title="Leído por el admin"></i> Leído</span>
+                                {% else %}
+                                <span class="text-muted"><i class="fas fa-check-circle" title="Sin leer por el admin"></i> Sin leer</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if es_superowner %}
+    <div class="col-12 mb-4">
+        <div class="card modern-card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 m-0 font-weight-bold text-dark">
+                    <i class="fas fa-users text-primary mr-1"></i> Destinatarios
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-center mb-3">
+                    <span class="badge badge-light border px-3 py-2">
+                        <i class="fas fa-envelope-open-text text-success mr-1" aria-hidden="true"></i>
+                        {{ leidos_count }} de {{ entregas|length }} leyeron este mensaje
+                    </span>
+                </div>
+                <div class="row">
+                    {% for entrega in entregas %}
+                    <div class="col-12 col-lg-6 mb-3">
+                        <div class="d-flex align-items-center p-3 rounded destinatario-card">
+                            <div class="avatar-circle avatar-circle-sm {% if entrega.destinatario == mensaje.emisor %}bg-warning{% else %}bg-info{% endif %} text-white mr-3">
+                                {{ entrega.destinatario.get_full_name|default:entrega.destinatario.username|slice:":1"|upper }}
+                            </div>
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="font-weight-bold text-dark text-truncate">
+                                    {{ entrega.destinatario.get_full_name|default:entrega.destinatario.username }}
+                                </div>
+                                <small class="text-muted d-block text-truncate">@{{ entrega.destinatario.username }}</small>
+                            </div>
+                            <div class="text-right ml-2">
+                                {% if entrega.destinatario == mensaje.emisor %}
+                                <span class="badge badge-warning mb-1 d-inline-block">Superowner</span>
+                                {% else %}
+                                <span class="badge badge-info mb-1 d-inline-block">Admin</span>
+                                {% endif %}
+                                <div>
+                                    {% if entrega.leido %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check-circle" title="Leído"></i>
+                                        <small class="ml-1">Leído · {{ entrega.leido_en|date:"d/m H:i" }}</small>
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-light border text-muted">
+                                        <i class="far fa-circle" title="Sin leer"></i>
+                                        <small class="ml-1">Sin leer</small>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if es_emisor and es_superowner %}
+<div class="modal fade" id="modalEliminarMensaje" tabindex="-1" role="dialog" aria-labelledby="modalEliminarTitulo" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarTitulo">Eliminar mensaje</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                ¿Seguro que querés eliminar este mensaje? La acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="{% url 'mensajes:delete' mensaje.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Sí, eliminar
+                    </button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if mensaje.tipo == mensaje.TIPO_PRODUCTO and not entidad_producto and mensaje.entidad_id %}
+<div class="modal fade" id="productoNoDisponibleModal" tabindex="-1" role="dialog" aria-labelledby="productoNoDisponibleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title font-weight-bold text-dark" id="productoNoDisponibleLabel">
+                    <i class="fas fa-box-open"></i> Producto no disponible
+                </h5>
+                <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-box-open fa-3x text-warning" aria-hidden="true"></i>
+                </div>
+                <p class="text-center font-weight-bold text-dark mb-1">
+                    El producto «{{ mensaje.entidad_nombre }}» ya no se encuentra disponible en el menú.
+                </p>
+                <p class="text-center small text-muted mb-3">
+                    Puede haber sido eliminado o dado de baja del punto de venta.
+                </p>
+                <div class="bg-light rounded p-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted text-uppercase font-weight-bold">Tipo</small>
+                        <small>{{ mensaje.get_tipo_display }}</small>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted text-uppercase font-weight-bold">Acción registrada</small>
+                        <small>{{ mensaje.get_accion_display }}</small>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted text-uppercase font-weight-bold">Aviso generado</small>
+                        <small>{{ mensaje.creado|date:"d/m/Y H:i" }} por {{ mensaje.emisor.get_full_name|default:mensaje.emisor.username }}</small>
+                    </div>
+                    <div class="border-top pt-2 mt-2">
+                        <small class="text-muted text-uppercase font-weight-bold d-block mb-1">Mensaje del aviso</small>
+                        <p class="small text-dark mb-0">{{ mensaje.texto }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-utensils"></i> Ir al menú
+                </a>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

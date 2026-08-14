@@ -62,6 +62,13 @@
 
   function abrirModal(row) {
     const d = row.dataset;
+    // Card bloqueada por el dueño: solo el modal del superowner, sin detalle normal
+    if (d.bloqueoDueno === '1') {
+      if (typeof window.abrirModalBloqueoDueno === 'function') {
+        window.abrirModalBloqueoDueno(row);
+      }
+      return;
+    }
     $nombre.textContent = d.nombre;
     $cat.textContent = d.categoria;
     $cat.style.background = d.categoriaColor;
@@ -105,5 +112,18 @@
 
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // -------- Apertura automática del detalle desde otros módulos --------
+  // Ej: "Ver producto" del detalle de mensajes navega a /menu/?detalle=ID.
+  const detalleId = new URLSearchParams(window.location.search).get('detalle');
+  if (detalleId && /^\d+$/.test(detalleId)) {
+    const card = document.querySelector('.product-card[data-id="' + detalleId + '"]');
+    if (card) {
+      setTimeout(() => {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        abrirModal(card);
+      }, 250);
+    }
   }
 })();

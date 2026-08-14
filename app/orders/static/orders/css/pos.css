@@ -230,8 +230,20 @@
   border: none;
 }
 
-/* Controles Stepper de Cantidad (+ / -) en Tabla del Pedido */
-.pos-stepper-wrap {
+/* Scroll interno de la tabla del pedido: 420px en desktop,
+   220px en mobile para que el catálogo siga accesible */
+.pos-cart-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+@media (max-width: 991.98px) {
+  .pos-cart-scroll {
+    max-height: 220px;
+  }
+}
+
+/* Controles Stepper de Cantidad (+ / -) en Tabla del Pedido */.pos-stepper-wrap {
   display: flex;
   align-items: center;
   justify-content: center;

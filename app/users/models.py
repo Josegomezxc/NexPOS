@@ -34,6 +34,14 @@ class Profile(models.Model):
     perf_telefono = models.CharField('Teléfono', max_length=30, blank=True)
     perf_documento = models.CharField('Documento', max_length=30, blank=True)
     perf_active = models.BooleanField('Activo', default=True)
+    perf_desactivado_por = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='usuarios_desactivados',
+        verbose_name='Desactivado por',
+    )
+    perf_desactivado_fecha = models.DateTimeField(
+        'Desactivado el', null=True, blank=True,
+    )
     perf_creado = models.DateTimeField('Creado', auto_now_add=True)
     perf_actualizado = models.DateTimeField('Actualizado', auto_now=True)
 
